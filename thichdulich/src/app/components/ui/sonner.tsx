@@ -1,0 +1,34 @@
+"use client";
+
+import { Toaster as Sonner, ToasterProps } from "sonner";
+
+const Toaster = ({ ...props }: ToasterProps) => {
+  return (
+    <Sonner
+      theme="light"
+      className="toaster group"
+      position="top-right"
+      richColors
+      closeButton
+      toastOptions={{
+        classNames: {
+          toast: "rounded-xl border shadow-lg",
+          title: "font-semibold",
+          description: "text-sm",
+          actionButton: "font-semibold",
+          cancelButton: "font-semibold",
+        },
+      }}
+      style={
+        {
+          "--normal-bg": "var(--popover)",
+          "--normal-text": "var(--popover-foreground)",
+          "--normal-border": "var(--border)",
+        } as React.CSSProperties
+      }
+      {...props}
+    />
+  );
+};
+
+export { Toaster };

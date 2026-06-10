@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0064D2" />
+      <stop offset="100%" stop-color="#0091FF" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#logoGrad)" />
+  <path
+    d="M32 12 39 25H51L41.5 33.5 45 48 32 40 19 48 22.5 33.5 13 25H25Z"
+    fill="#fff"
+    opacity="0.96"
+  />
+  <path
+    d="M13 51C23 44 38 44 51 51"
+    fill="none"
+    stroke="#FF8C00"
+    stroke-width="4"
+    stroke-linecap="round"
+    opacity="0.95"
+  />
+</svg>
