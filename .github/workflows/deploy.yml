@@ -1,0 +1,31 @@
+name: Deploy ThichDuLich
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/apps/Thichdulich
+            git pull origin main
+
+            cd /home/ubuntu/apps/Thichdulich/thichdulich
+            npm install
+            npm run build
+
+            sudo rm -rf /var/www/thichdulich/*
+            sudo cp -r dist/* /var/www/thichdulich/
+            sudo chown -R www-data:www-data /var/www/thichdulich
+
+            sudo systemctl reload nginx
