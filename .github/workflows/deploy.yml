@@ -23,9 +23,12 @@ jobs:
             cd /home/ubuntu/apps/Thichdulich/thichdulich
             npm install
             npm run build
+            cd /home/ubuntu/apps/Thichdulich/Backend
+            mvn clean package -DskipTests
+            sudo systemctl restart thichdulich-backend
 
             sudo rm -rf /var/www/thichdulich/*
-            sudo cp -r dist/* /var/www/thichdulich/
+            sudo cp -r /home/ubuntu/apps/Thichdulich/thichdulich/dist/* /var/www/thichdulich/
             sudo chown -R www-data:www-data /var/www/thichdulich
 
             sudo systemctl reload nginx
