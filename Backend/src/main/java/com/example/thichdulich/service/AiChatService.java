@@ -39,6 +39,11 @@ public class AiChatService {
 
     @Transactional(readOnly = true)
     public AiChatResponse chat(String message, String language, String legacyContext, String rawSessionId) {
+        return chat(message, language, legacyContext, rawSessionId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public AiChatResponse chat(String message, String language, String legacyContext, String rawSessionId, String currentUserId) {
         if (!StringUtils.hasText(message)) {
             throw new IllegalArgumentException("Vui lòng nhập nội dung cần hỗ trợ");
         }
@@ -52,7 +57,7 @@ public class AiChatService {
 
         ChatIntent intent = intentDetector.detect(message, conversationContext);
         ResolvedContext resolved = contextResolver.resolve(message, intent, conversationContext);
-        ChatDataBundle data = collectData(message, intent, resolved);
+        ChatDataBundle data = collectData(message, intent, resolved, currentUserId);
 
         String userPrompt = promptBuilder.buildUserPrompt(message, history, conversationContext, intent, resolved, data);
         String reply = aiService.answer(promptBuilder.systemPrompt(), userPrompt, intent, data);
@@ -65,7 +70,7 @@ public class AiChatService {
         return new AiChatResponse(reply, data.getTourCards(), sessionId, intent.name());
     }
 
-    private ChatDataBundle collectData(String message, ChatIntent intent, ResolvedContext resolved) {
+    private ChatDataBundle collectData(String message, ChatIntent intent, ResolvedContext resolved, String currentUserId) {
         ChatDataBundle data = new ChatDataBundle();
         switch (intent) {
             case tour_search -> {
@@ -105,15 +110,15 @@ public class AiChatService {
             case cancellation_policy -> {
                 data.setPolicyData(policyService.getPolicies());
                 if (StringUtils.hasText(resolved.getOrderCode())) {
-                    data.setBookingData(bookingDataService.getBookingStatus(resolved.getOrderCode()));
+                    data.setBookingData(bookingDataService.getBookingStatus(resolved.getOrderCode(), currentUserId));
                 }
             }
             case booking_status -> {
                 data.setBookingData(StringUtils.hasText(resolved.getOrderCode())
-                        ? bookingDataService.getBookingStatus(resolved.getOrderCode())
+                        ? bookingDataService.getBookingStatus(resolved.getOrderCode(), currentUserId)
                         : "Chưa có mã đơn. Cần người dùng cung cấp mã đơn hoặc đăng nhập vào mục Đặt tour của tôi.");
                 if (StringUtils.hasText(resolved.getOrderCode())) {
-                    data.setPaymentData(paymentDataService.getPaymentStatus(resolved.getOrderCode()));
+                    data.setPaymentData(paymentDataService.getPaymentStatus(resolved.getOrderCode(), currentUserId));
                 }
             }
             case travel_advice -> data.setTourData("Đây là câu hỏi tư vấn du lịch chung. AI được phép dùng kiến thức du lịch phổ thông, không bịa dữ liệu tour cụ thể.");

@@ -108,7 +108,7 @@ export function AIChatbot() {
   }, [isOpen, language]);
 
   const handleSendMessage = async (presetMessage?: string) => {
-    const content = (presetMessage ?? inputValue).trim();
+    const content = (typeof presetMessage === 'string' ? presetMessage : inputValue).trim();
     if (!content || isTyping) return;
 
     const userMessage: Message = {
@@ -537,7 +537,7 @@ export function AIChatbot() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder={language === 'vi' ? 'Hỏi gì đó...' : 'Ask something...'}
                 className="flex-1 px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
                 style={{
@@ -549,7 +549,7 @@ export function AIChatbot() {
                 onBlur={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.background = '#F9FAFB'; }}
               />
               <button
-                onClick={handleSendMessage}
+                onClick={() => handleSendMessage()}
                 disabled={!inputValue.trim() || isTyping}
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90 disabled:opacity-40"
                 style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)', boxShadow: '0 4px 12px rgba(0,100,210,0.35)' }}

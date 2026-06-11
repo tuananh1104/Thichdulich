@@ -26,6 +26,25 @@ public class ChatBookingDataService {
                 .orElse("Chưa tìm thấy đơn đặt tour theo mã được cung cấp.");
     }
 
+    public String getBookingStatus(String orderCode, String currentUserId) {
+        if (!StringUtils.hasText(currentUserId)) {
+            return "Vui lòng đăng nhập để kiểm tra thông tin đơn đặt tour của bạn.";
+        }
+
+        return findBooking(orderCode)
+                .map(booking -> belongsToUser(booking, currentUserId)
+                        ? summarizeBooking(booking)
+                        : "Bạn chỉ có thể kiểm tra thông tin đơn đặt tour thuộc tài khoản của mình.")
+                .orElse("Chưa tìm thấy đơn đặt tour theo mã được cung cấp.");
+    }
+
+    public boolean belongsToUser(Booking booking, String currentUserId) {
+        return booking != null
+                && booking.getUser() != null
+                && currentUserId != null
+                && currentUserId.equals(booking.getUser().getId());
+    }
+
     public String summarizeBooking(Booking booking) {
         return """
                 Mã đơn: %s

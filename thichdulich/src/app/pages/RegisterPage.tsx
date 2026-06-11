@@ -198,7 +198,7 @@ export function RegisterPage() {
 
           {/* Top */}
           <div className="relative">
-            <div className="flex items-center gap-2.5 mb-2">
+            <Link to="/" className="flex items-center gap-2.5 mb-2 transition-opacity hover:opacity-85" aria-label="Về trang chủ">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)', boxShadow: '0 4px 14px rgba(0,100,210,0.4)' }}
@@ -206,7 +206,7 @@ export function RegisterPage() {
                 <Compass className="w-5 h-5 text-white" />
               </div>
               <span className="text-white font-black" style={{ fontSize: '1.0625rem' }}>Thích Du Lịch</span>
-            </div>
+            </Link>
 
             <div
               className="inline-block mt-4 mb-1 px-3 py-1 rounded-full text-xs font-bold tracking-widest"
@@ -247,6 +247,13 @@ export function RegisterPage() {
 
         {/* ── Right form ── */}
         <div className="flex-1 bg-white flex flex-col justify-center px-8 md:px-10 py-10 overflow-y-auto">
+
+          <Link to="/" className="mb-6 flex items-center gap-2 md:hidden transition-opacity hover:opacity-85" aria-label="Về trang chủ">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)' }}>
+              <Compass className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-black text-gray-900" style={{ fontSize: '1.0625rem' }}>Thích Du Lịch</span>
+          </Link>
 
           <div className="mb-6">
             <h1

@@ -131,7 +131,7 @@ export function LoginPage() {
 
           {/* Top: Brand */}
           <div className="relative">
-            <div className="flex items-center gap-2.5 mb-8">
+            <Link to="/" className="flex items-center gap-2.5 mb-8 transition-opacity hover:opacity-85" aria-label="Về trang chủ">
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)', boxShadow: '0 4px 14px rgba(0,100,210,0.4)' }}
@@ -139,7 +139,7 @@ export function LoginPage() {
                 <Compass className="w-5 h-5 text-white" />
               </div>
               <span className="text-white font-black" style={{ fontSize: '1.0625rem', letterSpacing: '-0.4px' }}>Thích Du Lịch</span>
-            </div>
+            </Link>
 
             {/* Highlights */}
             <div className="space-y-3">
@@ -205,12 +205,12 @@ export function LoginPage() {
         <div className="flex-1 bg-white flex flex-col justify-center px-8 md:px-10 py-10">
 
           {/* Mobile brand */}
-          <div className="flex items-center gap-2 mb-8 md:hidden">
+          <Link to="/" className="flex items-center gap-2 mb-8 md:hidden transition-opacity hover:opacity-85" aria-label="Về trang chủ">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)' }}>
               <Compass className="w-4 h-4 text-white" />
             </div>
             <span className="font-black text-gray-900" style={{ fontSize: '1.0625rem' }}>Thích Du Lịch</span>
-          </div>
+          </Link>
 
           <div className="mb-7">
             <h1
