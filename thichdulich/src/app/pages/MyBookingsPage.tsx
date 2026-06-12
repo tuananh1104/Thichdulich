@@ -25,50 +25,6 @@ const emptyCancelForm = {
   refundAccountName: '',
 };
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-function compressImageToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    const objectUrl = URL.createObjectURL(file);
-
-    image.onload = () => {
-      const maxSide = 1200;
-      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-      const width = Math.max(1, Math.round(image.width * scale));
-      const height = Math.max(1, Math.round(image.height * scale));
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d');
-
-      if (!context) {
-        URL.revokeObjectURL(objectUrl);
-        readFileAsDataUrl(file).then(resolve).catch(reject);
-        return;
-      }
-
-      context.drawImage(image, 0, 0, width, height);
-      URL.revokeObjectURL(objectUrl);
-      resolve(canvas.toDataURL('image/jpeg', 0.78));
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      readFileAsDataUrl(file).then(resolve).catch(reject);
-    };
-
-    image.src = objectUrl;
-  });
-}
-
 function formatBookingDate(value?: string | null) {
   if (!value) return 'Chưa có lịch';
   const date = new Date(value);
@@ -160,7 +116,7 @@ export function MyBookingsPage() {
 
     try {
       const imageUrls = reviewData.images?.length
-        ? await Promise.all(reviewData.images.map(compressImageToDataUrl))
+        ? (await api.uploadImages(reviewData.images, 'reviews')).map((item: any) => item.url).filter(Boolean)
         : [];
       await api.createReview({
         tourId: booking.tourId,
@@ -190,11 +146,10 @@ export function MyBookingsPage() {
     if (!booking?.tourId) return;
     try {
       const imageUrls = reportData.evidence?.length
-        ? await Promise.all(
-          reportData.evidence
-            .filter(file => file.type.startsWith('image/'))
-            .map(compressImageToDataUrl)
-        )
+        ? (await api.uploadImages(
+          reportData.evidence.filter(file => file.type.startsWith('image/')),
+          'reports'
+        )).map((item: any) => item.url).filter(Boolean)
         : [];
       await api.createReport({
         tourId: booking.tourId,

@@ -75,14 +75,15 @@ export function CreateTourModal({
   const [location, setLocation] = useState(editTour?.location       || '');
   const [type,     setType]     = useState<Tour['type']>(editTour?.type || 'beach');
   const [image,    setImage]    = useState(editTour?.image           || '');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>(
     Array.from(new Set(((editTour as any)?.images || []).filter(Boolean)))
   );
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [included, setIncluded] = useState<string[]>(editTour?.included || []);
   const [excluded, setExcluded] = useState<string[]>((editTour as any)?.excluded || []);
   const includedInputRef = useRef<HTMLInputElement>(null);
   const excludedInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // ── Itinerary ─────────────────────────────────────────────────────────
   const [itinerary, setItinerary] = useState<ItineraryDay[]>(
@@ -130,7 +131,7 @@ export function CreateTourModal({
     if (!nameVi.trim())    e.nameVi   = 'Bắt buộc';
     if (!descVi.trim())    e.descVi   = 'Bắt buộc';
     if (!location.trim())  e.location = 'Bắt buộc';
-    if (!image.trim())     e.image    = 'Bắt buộc';
+    if (!image.trim() && !imageFile) e.image = 'Bắt buộc';
     if (duration < 1)      e.duration = 'Tối thiểu 1 ngày';
     if (advanceBookingDays < 1) e.advanceBookingDays = 'Tối thiểu 1 ngày';
     if (price <= 0)        e.price    = 'Giá tour phải lớn hơn 0.';
@@ -150,8 +151,12 @@ export function CreateTourModal({
     if (!validate()) return;
     setIsSubmitting(true);
     try {
+      const uploadedCover = imageFile ? await api.uploadImage(imageFile, 'tours') : null;
+      const uploadedGallery = galleryFiles.length ? await api.uploadImages(galleryFiles, 'tours') : [];
+      const coverUrl = uploadedCover?.url || image;
+      const galleryUrls = uploadedGallery.map((item: any) => item.url).filter(Boolean);
       await onSubmit({
-        images: Array.from(new Set([image, ...galleryImages].map(url => url.trim()).filter(Boolean))),
+        images: Array.from(new Set([coverUrl, ...galleryImages, ...galleryUrls].map(url => url.trim()).filter(Boolean))),
         name:        { vi: nameVi, en: nameVi },
         description: { vi: descVi, en: descVi },
         location,
@@ -159,7 +164,7 @@ export function CreateTourModal({
         duration,
         advanceBookingDays,
         price,
-        image,
+        image: coverUrl,
         rating:       4.5,
         reviews:      0,
         maxSeats,
@@ -195,15 +200,23 @@ export function CreateTourModal({
     }
   };
 
-  const addGalleryImage = () => {
-    const val = galleryInputRef.current?.value.trim();
-    if (!val) return;
-    setGalleryImages(prev => Array.from(new Set([...prev, val])));
-    if (galleryInputRef.current) galleryInputRef.current.value = '';
-  };
-
   const removeGalleryImage = (url: string) => {
     setGalleryImages(prev => prev.filter(item => item !== url));
+  };
+
+  const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImage(URL.createObjectURL(file));
+    setErrors(prev => ({ ...prev, image: '' }));
+  };
+
+  const handleGalleryFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    setGalleryFiles(prev => [...prev, ...files].slice(0, 8));
+    event.target.value = '';
   };
 
   const addDay = () =>
@@ -245,7 +258,7 @@ export function CreateTourModal({
     });
 
   // ── Tab completion indicators ─────────────────────────────────────────
-  const basicDone   = !!(nameVi && descVi && location && image);
+  const basicDone   = !!(nameVi && descVi && location && (image || imageFile));
   const seatsDone   = duration >= 1 && price > 0 && maxSeats >= 1;
   const tabDone: Record<TabKey, boolean> = {
     basic:     basicDone,
@@ -390,16 +403,16 @@ export function CreateTourModal({
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   <ImageIcon className="w-3.5 h-3.5 inline mr-1" style={{ color: '#0064D2' }} />
-                  URL ảnh đại diện <span style={{ color: '#DC2626' }}>*</span>
+                  Ảnh đại diện <span style={{ color: '#DC2626' }}>*</span>
                 </label>
-                <input
-                  type="url"
-                  value={image}
-                  onChange={e => { setImage(e.target.value); setErrors(p => ({ ...p, image: '' })); }}
-                  placeholder="https://images.unsplash.com/..."
-                  className={inputCls}
-                  style={{ borderColor: errors.image ? '#FCA5A5' : '' }}
-                />
+                <label
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-4 text-sm font-bold transition-colors hover:border-blue-400 hover:bg-blue-50"
+                  style={{ borderColor: errors.image ? '#FCA5A5' : '#CBD5E1', color: '#0064D2' }}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Chọn ảnh từ máy
+                  <input type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
+                </label>
                 <FieldError msg={errors.image} />
                 {image && (
                   <div className="mt-2 relative rounded-xl overflow-hidden h-36 bg-gray-100">
@@ -417,25 +430,13 @@ export function CreateTourModal({
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Thư viện ảnh tour
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    ref={galleryInputRef}
-                    type="url"
-                    className={inputCls}
-                    placeholder="Dán URL ảnh khác của tour..."
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addGalleryImage(); } }}
-                  />
-                  <button
-                    type="button"
-                    onClick={addGalleryImage}
-                    className="px-4 py-2.5 rounded-xl text-sm font-bold text-white flex-shrink-0"
-                    style={{ background: '#0064D2' }}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-4 text-sm font-bold text-gray-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600">
+                  <Plus className="h-4 w-4" />
+                  Chọn nhiều ảnh
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryFilesChange} />
+                </label>
                 <p className="text-xs text-gray-400 mt-1.5">Ảnh đại diện sẽ tự được lưu là ảnh đầu tiên. Các ảnh dưới đây hiển thị trong gallery chi tiết tour.</p>
-                {galleryImages.length > 0 && (
+                {(galleryImages.length > 0 || galleryFiles.length > 0) && (
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {galleryImages.map(url => (
                       <div key={url} className="group relative h-28 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
@@ -455,6 +456,22 @@ export function CreateTourModal({
                         </button>
                       </div>
                     ))}
+                    {galleryFiles.map((file, index) => {
+                      const preview = URL.createObjectURL(file);
+                      return (
+                        <div key={`${file.name}-${file.size}-${index}`} className="group relative h-28 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+                          <img src={preview} alt="Ảnh tour" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setGalleryFiles(prev => prev.filter((_, itemIndex) => itemIndex !== index))}
+                            className="absolute top-2 right-2 rounded-lg bg-white/90 p-1.5 text-red-600 shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
+                            aria-label="Xóa ảnh"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

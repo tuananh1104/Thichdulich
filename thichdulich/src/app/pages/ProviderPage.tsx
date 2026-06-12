@@ -170,7 +170,9 @@ interface EditFormState {
   discountPercent: number;
   promotionActive: boolean;
   image: string;
+  imageFile?: File | null;
   images: string[];
+  galleryFiles?: File[];
   included: string[];
   itinerary: ItineraryDay[];
   maxSeats: number;
@@ -230,7 +232,7 @@ export function ProviderPage() {
     nameVi: '', nameEn: '', descVi: '', descEn: '',
     location: '', type: 'adventure', duration: 1, advanceBookingDays: 1, price: 0,
     originalPrice: 0, promotionTitle: '', promotionBadge: '', discountPercent: 0, promotionActive: false,
-    image: '', images: [], included: [], itinerary: [], maxSeats: 20,
+    image: '', imageFile: null, images: [], galleryFiles: [], included: [], itinerary: [], maxSeats: 20,
   });
 
   // ─── Seat management ──────────────────────────────────────────────────
@@ -868,7 +870,9 @@ export function ProviderPage() {
       discountPercent: tour.discountPercent || 0,
       promotionActive: Boolean(tour.promotionActive),
       image:     tour.image,
+      imageFile: null,
       images:    Array.from(new Set([tour.image, ...(((tour as any).images || []) as string[])].filter(Boolean))),
+      galleryFiles: [],
       included:  (tour.included ?? []).map(getIncludeLabel),
       itinerary: (tour.itinerary ?? []).map(d => ({
         day: d.day,
@@ -883,8 +887,9 @@ export function ProviderPage() {
     setEditingTour(tour);
   };
 
-  const handleSaveEditTour = () => {
+  const handleSaveEditTour = async () => {
     if (!editingTour) return;
+    try {
     // Update seat map
     setSeatMap(prev => ({ ...prev, [editingTour.id]: editForm.maxSeats }));
     // Update tour
@@ -899,6 +904,11 @@ export function ProviderPage() {
       title: d.title.vi.trim(),
       activities: getTourActivities(d, 'vi').map(item => item.trim()).filter(Boolean),
     }));
+    const uploadedCover = editForm.imageFile ? await api.uploadImage(editForm.imageFile, 'tours') : null;
+    const uploadedGallery = editForm.galleryFiles?.length ? await api.uploadImages(editForm.galleryFiles, 'tours') : [];
+    const coverUrl = uploadedCover?.url || editForm.image || editingTour.image;
+    const uploadedGalleryUrls = uploadedGallery.map((item: any) => item.url).filter(Boolean);
+    const nextImages = Array.from(new Set([coverUrl, ...editForm.images, ...uploadedGalleryUrls].map(url => url.trim()).filter(Boolean)));
     const contentChanged =
       (editForm.nameVi || editingTour.name.vi) !== editingTour.name.vi
       || (editForm.descVi || '') !== (editingTour.description?.vi ?? '')
@@ -907,8 +917,8 @@ export function ProviderPage() {
       || Number(editForm.duration) !== editingTour.duration
       || Number(editForm.advanceBookingDays) !== (editingTour.advanceBookingDays || suggestedAdvanceBookingDays(editingTour.duration))
       || Number(editForm.price) !== editingTour.price
-      || (editForm.image || editingTour.image) !== editingTour.image
-      || JSON.stringify(editForm.images) !== JSON.stringify([editingTour.image, ...(((editingTour as any).images || []) as string[])].filter(Boolean))
+      || coverUrl !== editingTour.image
+      || JSON.stringify(nextImages) !== JSON.stringify([editingTour.image, ...(((editingTour as any).images || []) as string[])].filter(Boolean))
       || editForm.maxSeats !== getMaxSeats(editingTour.id)
       || JSON.stringify(editForm.included) !== JSON.stringify(editingTour.included ?? [])
       || JSON.stringify(normalizedItinerary) !== JSON.stringify(currentItinerary);
@@ -931,8 +941,8 @@ export function ProviderPage() {
       promotionBadge: hasPromotion ? editForm.promotionBadge : undefined,
       discountPercent: hasPromotion ? Number(editForm.discountPercent) || 0 : undefined,
       promotionActive: hasPromotion,
-      image:       editForm.image || editingTour.image,
-      images:      Array.from(new Set([editForm.image || editingTour.image, ...editForm.images].map(url => url.trim()).filter(Boolean))),
+      image:       coverUrl,
+      images:      nextImages,
       maxSeats:    editForm.maxSeats,
       included:    editForm.included,
       itinerary:   editForm.itinerary.map(d => ({
@@ -944,6 +954,9 @@ export function ProviderPage() {
     });
     setEditingTour(null);
     setSuccessModal({ isOpen: true, title: 'Lưu thành công', message: 'Thông tin tour đã được cập nhật và gửi Admin xét duyệt lại.' });
+    } catch (error) {
+      showProviderError('Không thể upload ảnh tour', error, 'Vui lòng kiểm tra cấu hình Cloudinary và thử lại.');
+    }
   };
 
   const handleLogout = () => { logout(); navigate('/'); };
@@ -2536,13 +2549,31 @@ export function ProviderPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">URL ảnh đại diện *</label>
-                    <input type="url" value={editForm.image} onChange={e => setEditForm(p => ({ ...p, image: e.target.value }))} className={inputCls} />
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Ảnh đại diện *</label>
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-4 text-sm font-bold text-gray-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600">
+                      <ImageIcon className="h-4 w-4" />
+                      Chọn ảnh từ máy
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={event => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          setEditForm(prev => ({ ...prev, imageFile: file, image: URL.createObjectURL(file) }));
+                        }}
+                      />
+                    </label>
+                    {editForm.image && (
+                      <div className="mt-3 h-36 overflow-hidden rounded-xl bg-gray-100">
+                        <img src={editForm.image} alt="Ảnh đại diện tour" className="h-full w-full object-cover" />
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Thư viện ảnh tour</label>
-                    <div className="flex gap-2">
+                    <div className="hidden">
                       <input
                         type="url"
                         placeholder="Dán URL ảnh khác của tour..."
@@ -2571,8 +2602,24 @@ export function ProviderPage() {
                         <Plus className="h-4 w-4" />
                       </button>
                     </div>
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-4 text-sm font-bold text-gray-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600">
+                      <Plus className="h-4 w-4" />
+                      Chọn nhiều ảnh
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={event => {
+                          const files = Array.from(event.target.files || []);
+                          if (!files.length) return;
+                          setEditForm(prev => ({ ...prev, galleryFiles: [...(prev.galleryFiles || []), ...files].slice(0, 8) }));
+                          event.target.value = '';
+                        }}
+                      />
+                    </label>
                     <p className="mt-1.5 text-xs text-gray-400">Ảnh đại diện và các ảnh này sẽ được lưu vào gallery chi tiết tour.</p>
-                    {editForm.images.length > 0 && (
+                    {(editForm.images.length > 0 || (editForm.galleryFiles?.length || 0) > 0) && (
                       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {editForm.images.map(url => (
                           <div key={url} className="group relative h-28 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
@@ -2587,6 +2634,23 @@ export function ProviderPage() {
                               onClick={() => setEditForm(prev => ({ ...prev, images: prev.images.filter(item => item !== url) }))}
                               className="absolute right-2 top-2 rounded-lg bg-white/90 p-1.5 text-red-600 shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
                               aria-label="Xóa ảnh"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                        {(editForm.galleryFiles || []).map((file, index) => (
+                          <div key={`${file.name}-${file.size}-${index}`} className="group relative h-28 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt="Ảnh tour"
+                              className="h-full w-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditForm(prev => ({ ...prev, galleryFiles: (prev.galleryFiles || []).filter((_, itemIndex) => itemIndex !== index) }))}
+                              className="absolute right-2 top-2 rounded-lg bg-white/90 p-1.5 text-red-600 shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
+                              aria-label="XÃ³a áº£nh"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>

@@ -146,6 +146,30 @@ class ApiClient {
     return response.data;
   }
 
+  // ============ UPLOAD ENDPOINTS ============
+  async uploadImage(file: File, folder = 'general') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    const response = await this.client.post('/api/uploads/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+    return response.data.data;
+  }
+
+  async uploadImages(files: File[], folder = 'general') {
+    if (!files.length) return [];
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    formData.append('folder', folder);
+    const response = await this.client.post('/api/uploads/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+    return response.data.data || [];
+  }
+
   // ============ TOUR ENDPOINTS ============
   async getTours(params?: any) {
     const response = await this.client.get('/api/tours', { params });

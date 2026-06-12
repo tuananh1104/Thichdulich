@@ -477,6 +477,7 @@ export function AdminPage() {
     image: '',
     region: 'Bắc',
   });
+  const [destImageFile, setDestImageFile] = useState<File | null>(null);
   const [destRegionFilter, setDestRegionFilter] = useState<'all' | Destination['region']>('all');
   const [tourCategories, setTourCategories] = useState<TourCategory[]>([]);
   const [categoryForm, setCategoryForm] = useState<Omit<TourCategory, 'tourCount'>>({
@@ -2402,19 +2403,21 @@ export function AdminPage() {
                 ))}
               </div>
 
-              <div className="grid min-h-0 grid-cols-1 gap-5 xl:grid-cols-[360px_minmax(0,1fr)] xl:h-[calc(100vh-250px)] xl:max-h-[760px]">
-                <div className="flex min-h-0 flex-col rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between">
+              <div className="grid min-h-0 grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-260px)] xl:max-h-[860px]">
+                <div className="flex min-h-0 flex-col rounded-3xl border border-gray-100 bg-white shadow-sm">
+                  <div className="border-b border-gray-100 p-5">
+                    <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-gray-900">Tour có đánh giá</p>
-                      <p className="text-xs text-gray-500">Chọn một tour để kiểm duyệt phản hồi</p>
+                        <p className="text-base font-black text-gray-900">Tour có đánh giá</p>
+                        <p className="mt-1 text-xs text-gray-500">Chọn một tour để kiểm duyệt phản hồi</p>
                     </div>
                     <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
                       {filteredReviewTours.length}/{reviewTours.length}
                     </span>
+                    </div>
                   </div>
 
-                  <div className="relative mb-3">
+                  <div className="relative m-4 mb-3">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       value={reviewTourSearch}
@@ -2427,7 +2430,7 @@ export function AdminPage() {
                     />
                   </div>
 
-                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {reviewTours.length === 0 ? (
                       <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
                         Chưa có tour nào có đánh giá.
@@ -2446,14 +2449,14 @@ export function AdminPage() {
                           key={tour.id}
                           type="button"
                           onClick={() => setSelectedReviewTour(tour.id)}
-                          className="w-full rounded-xl border p-3 text-left transition-all"
+                          className="w-full rounded-2xl border p-4 text-left transition-all"
                           style={{
                             borderColor: isSelected ? '#0064D2' : '#E5E7EB',
                             background: isSelected ? '#EFF6FF' : '#FFFFFF',
                           }}
                         >
                           <div className="flex gap-3">
-                            <img src={tour.image} alt={tour.name.vi} className="h-14 w-16 rounded-lg object-cover" />
+                            <img src={tour.image} alt={tour.name.vi} className="h-20 w-28 rounded-xl object-cover" />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-bold text-gray-900">{tour.name.vi}</p>
                               <p className="truncate text-xs text-gray-500">{tour.providerName}</p>
@@ -2475,15 +2478,17 @@ export function AdminPage() {
                   </div>
                 </div>
 
-                <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                <div className="min-h-0 space-y-5 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   {selectedReviewTourData && (
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                      <div className="grid gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
+                        <img src={selectedReviewTourData.image} alt={selectedReviewTourData.name.vi} className="h-56 w-full object-cover lg:h-full" />
+                        <div className="min-w-0 p-6">
                       <div className="flex items-start gap-4">
-                        <img src={selectedReviewTourData.image} alt={selectedReviewTourData.name.vi} className="h-24 w-32 rounded-xl object-cover" />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <h3 className="text-lg font-black text-gray-900">{selectedReviewTourData.name.vi}</h3>
+                                  <h3 className="text-2xl font-black leading-tight text-gray-950">{selectedReviewTourData.name.vi}</h3>
                               <p className="mt-1 text-sm text-gray-500">{selectedReviewTourData.providerName} · {selectedReviewTourData.location}</p>
                             </div>
                             <button
@@ -2494,7 +2499,7 @@ export function AdminPage() {
                               Mở hồ sơ tour
                             </button>
                           </div>
-                          <div className="mt-4 grid grid-cols-4 gap-3">
+                              <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                             {[
                               { label: 'Đánh giá', value: filteredReviews.length, color: '#0064D2' },
                               { label: 'Điểm TB', value: filteredReviews.length ? (filteredReviews.reduce((s, r) => s + r.rating, 0) / filteredReviews.length).toFixed(1) : '0.0', color: '#F59E0B' },
@@ -2509,6 +2514,8 @@ export function AdminPage() {
                           </div>
                         </div>
                       </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 {filteredReviews.length === 0 ? (
@@ -2519,7 +2526,7 @@ export function AdminPage() {
                   </div>
                 ) : (
                   filteredReviews.map((review) => (
-                    <div key={review.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div key={review.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 lg:p-7">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start gap-3">
@@ -2553,7 +2560,9 @@ export function AdminPage() {
                       </div>
 
                       {/* Comment */}
-                      <p className="text-sm text-gray-700 leading-relaxed mb-4">{review.comment}</p>
+                      <div className="mb-5 rounded-2xl bg-gray-50 p-5">
+                        <p className="text-base leading-7 text-gray-800">{review.comment}</p>
+                      </div>
 
                       {!review.response && review.responseRequested && (
                         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-700">
@@ -2564,14 +2573,16 @@ export function AdminPage() {
 
                       {/* Images if any */}
                       {review.images && review.images.length > 0 && (
-                        <div className="flex gap-2 mb-4">
+                        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                           {review.images.map((img, idx) => (
-                            <img
+                            <a key={idx} href={img} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                              <img
                               key={idx}
                               src={img}
                               alt={`Review ${idx + 1}`}
-                              className="w-20 h-20 rounded-xl object-cover border border-gray-200"
-                            />
+                              className="h-32 w-full object-cover transition-transform group-hover:scale-105"
+                              />
+                            </a>
                           ))}
                         </div>
                       )}
@@ -2591,12 +2602,12 @@ export function AdminPage() {
                       )}
 
                       {/* Admin actions */}
-                      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-100 sm:flex-row sm:flex-wrap">
                         {!review.response && (
                           <button
                             onClick={() => handleRequestProviderReviewResponse(review)}
                             disabled={review.responseRequested}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-90"
+                            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90"
                             style={{ background: review.responseRequested ? '#F3F4F6' : '#F5F3FF', color: review.responseRequested ? '#9CA3AF' : '#7C3AED' }}
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
@@ -2616,7 +2627,7 @@ export function AdminPage() {
                               },
                             });
                           }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-red-50"
+                          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all hover:bg-red-50"
                           style={{ color: '#DC2626', border: '1px solid #FECACA' }}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2695,7 +2706,7 @@ export function AdminPage() {
                   <p className="text-sm text-gray-400">Không có báo cáo nào trong trạng thái đang lọc.</p>
                 </div>
               ) : (
-                <div className="grid min-h-0 gap-5 xl:grid-cols-[360px_minmax(0,1fr)] xl:h-[calc(100vh-300px)] xl:max-h-[760px]">
+                <div className="grid min-h-0 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-260px)] xl:max-h-[860px]">
                   <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <div className="border-b border-gray-100 p-4">
                       <p className="text-sm font-black text-gray-900">Tour có báo cáo</p>
@@ -2709,7 +2720,7 @@ export function AdminPage() {
                             key={item.tourId}
                             type="button"
                             onClick={() => setSelectedReportTour(item.tourId)}
-                            className="mb-2 w-full rounded-xl p-3 text-left transition-all"
+                            className="mb-3 w-full rounded-2xl p-4 text-left transition-all"
                             style={{
                               background: active ? '#FFF7ED' : 'white',
                               border: active ? '1px solid #FDBA74' : '1px solid #F3F4F6',
@@ -2718,9 +2729,9 @@ export function AdminPage() {
                           >
                             <div className="flex gap-3">
                               {item.image ? (
-                                <img src={item.image} alt={item.tourName} className="h-16 w-20 rounded-lg object-cover" />
+                                <img src={item.image} alt={item.tourName} className="h-20 w-28 rounded-xl object-cover" />
                               ) : (
-                                <div className="flex h-16 w-20 items-center justify-center rounded-lg bg-gray-100">
+                                <div className="flex h-20 w-28 items-center justify-center rounded-xl bg-gray-100">
                                   <Package className="h-6 w-6 text-gray-300" />
                                 </div>
                               )}
@@ -2821,8 +2832,8 @@ export function AdminPage() {
                         {selectedTourReports.map(report => {
                           const st = reportStatusMap[report.status] || reportStatusMap.pending;
                           return (
-                            <div key={report.id} className="grid gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm xl:grid-cols-[1fr_300px]">
-                              <div className="space-y-4">
+                            <div key={report.id} className="grid gap-5 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm xl:grid-cols-[minmax(0,1fr)_360px]">
+                              <div className="space-y-5">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: st.bg, color: st.color }}>
                                     {st.label}
@@ -2840,17 +2851,17 @@ export function AdminPage() {
                                   <p className="mt-1 text-sm font-bold text-gray-900">{report.reporterName || 'Khách hàng'}</p>
                                 </div>
 
-                                <div className="rounded-xl bg-gray-50 p-4">
+                                <div className="rounded-2xl bg-gray-50 p-5">
                                   <p className="mb-2 text-xs font-bold uppercase text-gray-500">Nội dung báo cáo</p>
-                                  <p className="text-sm leading-relaxed text-gray-700">{report.description || 'Không có mô tả chi tiết.'}</p>
+                                  <p className="text-base leading-7 text-gray-800">{report.description || 'Không có mô tả chi tiết.'}</p>
                                   {report.images && report.images.length > 0 && (
-                                    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                                       {report.images.map((image, index) => (
-                                        <a key={index} href={image} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                        <a key={index} href={image} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl border border-gray-200 bg-white">
                                           <img
                                             src={image}
                                             alt={`Bằng chứng ${index + 1}`}
-                                            className="h-24 w-full object-cover transition-transform hover:scale-105"
+                                            className="h-36 w-full object-cover transition-transform group-hover:scale-105"
                                           />
                                         </a>
                                       ))}
@@ -2869,13 +2880,13 @@ export function AdminPage() {
                                 )}
                               </div>
 
-                              <div className="rounded-xl border border-gray-200 p-4">
-                                <p className="mb-3 text-sm font-black text-gray-900">Xử lý báo cáo</p>
-                                <div className="space-y-2">
+                              <div className="rounded-2xl border border-gray-200 p-5">
+                                <p className="mb-4 text-base font-black text-gray-900">Xử lý báo cáo</p>
+                                <div className="space-y-3">
                                   {report.status === 'pending' && (
                                     <button
                                       onClick={() => handleReviewReport(report)}
-                                      className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90"
+                                      className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold transition-all hover:opacity-90"
                                       style={{ background: '#F5F3FF', color: '#7C3AED' }}
                                     >
                                       <Check className="h-3.5 w-3.5" />
@@ -2886,7 +2897,7 @@ export function AdminPage() {
                                     <>
                                       <button
                                         onClick={() => handleWarnProviderReport(report)}
-                                        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90"
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold transition-all hover:opacity-90"
                                         style={{ background: '#FEF3C7', color: '#B45309' }}
                                       >
                                         <AlertTriangle className="h-3.5 w-3.5" />
@@ -2894,7 +2905,7 @@ export function AdminPage() {
                                       </button>
                                       <button
                                         onClick={() => handleResolveReport(report)}
-                                        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all hover:opacity-90"
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90"
                                         style={{ background: '#059669' }}
                                       >
                                         <CheckCircle className="h-3.5 w-3.5" />
@@ -2902,14 +2913,14 @@ export function AdminPage() {
                                       </button>
                                       <button
                                         onClick={() => handleDismissReport(report)}
-                                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 transition-all hover:bg-gray-50"
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-50"
                                       >
                                         <X className="h-3.5 w-3.5" />
                                         Bỏ qua báo cáo
                                       </button>
                                       <button
                                         onClick={() => handleDeleteTour(report.tourId, report.tourName)}
-                                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-50"
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-5 py-3.5 text-sm font-bold text-red-600 transition-all hover:bg-red-50"
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
                                         Gỡ tour khỏi hệ thống
@@ -3099,20 +3110,30 @@ export function AdminPage() {
 
             const openAdd = () => {
               setDestForm({ name: '', description: '', image: '', region: 'Bắc' });
+              setDestImageFile(null);
               setDestModal({ open: true, editing: null });
             };
             const openEdit = (dest: Destination) => {
               setDestForm({ name: dest.name, description: dest.description, image: dest.image, region: dest.region });
+              setDestImageFile(null);
               setDestModal({ open: true, editing: dest });
             };
-            const handleSave = () => {
+            const handleSave = async () => {
               if (!destForm.name.trim()) return;
+              let nextForm = destForm;
+              try {
+                const uploadedImage = destImageFile ? await api.uploadImage(destImageFile, 'destinations') : null;
+                nextForm = uploadedImage?.url ? { ...destForm, image: uploadedImage.url } : destForm;
+              } catch (error) {
+                showAdminError('Không thể upload ảnh điểm đến', error, 'Vui lòng kiểm tra cấu hình Cloudinary và thử lại.');
+                return;
+              }
               if (destModal.editing) {
                 const previous = destinations;
                 setDestinations(prev => prev.map(d =>
-                  d.id === destModal.editing!.id ? { ...d, ...destForm } : d
+                  d.id === destModal.editing!.id ? { ...d, ...nextForm } : d
                 ));
-                api.updateDestination(destModal.editing.id, toDestinationPayload(destForm))
+                api.updateDestination(destModal.editing.id, toDestinationPayload(nextForm))
                   .then(updated => setDestinations(prev => prev.map(d =>
                     d.id === destModal.editing!.id ? toAdminDestination(updated) : d
                   )))
@@ -3123,13 +3144,13 @@ export function AdminPage() {
               } else {
                 const optimistic: Destination = {
                   id: 'dest_' + Date.now(),
-                  ...destForm,
+                  ...nextForm,
                   tourCount: 0,
                 };
                 setDestinations(prev => [...prev, {
                   ...optimistic,
                 }]);
-                api.createDestination(toDestinationPayload(destForm))
+                api.createDestination(toDestinationPayload(nextForm))
                   .then(created => setDestinations(prev => prev.map(d =>
                     d.id === optimistic.id ? toAdminDestination(created) : d
                   )))
@@ -3138,6 +3159,7 @@ export function AdminPage() {
                     setDestinations(prev => prev.filter(d => d.id !== optimistic.id));
                   });
               }
+              setDestImageFile(null);
               setDestModal({ open: false, editing: null });
             };
             const handleDelete = (id: string, name: string) => {
@@ -3194,105 +3216,134 @@ export function AdminPage() {
             const inputCls = "w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
 
             return (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-gray-900 text-sm">Danh sách điểm đến</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{destinations.length} điểm đến trong hệ thống</p>
+              <div className="space-y-6">
+                <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                  <div className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="text-2xl font-black text-gray-950">Điểm đến & loại hình tour</p>
+                      <p className="mt-1 text-sm text-gray-500">Quản lý vùng miền, ảnh đại diện điểm đến và các nhóm trải nghiệm provider được phép dùng.</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-center sm:min-w-[360px]">
+                      {[
+                        { label: 'Điểm đến', value: destinations.length, color: '#0064D2' },
+                        { label: 'Loại đang bật', value: tourCategories.filter(item => item.active).length, color: '#059669' },
+                        { label: 'Tour gắn điểm', value: destinations.reduce((sum, item) => sum + item.tourCount, 0), color: '#7C3AED' },
+                      ].map(item => (
+                        <div key={item.label} className="rounded-2xl bg-gray-50 px-4 py-3">
+                          <p className="text-xl font-black" style={{ color: item.color }}>{item.value}</p>
+                          <p className="text-xs font-semibold text-gray-500">{item.label}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                  <div className="flex items-center justify-between gap-4 border-t border-gray-100 bg-gray-50/70 px-6 py-4">
+                    <p className="text-sm font-semibold text-gray-600">{filtered.length} điểm đến đang hiển thị</p>
                   <button
                     onClick={openAdd}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 transition-all"
+                    className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white transition-all hover:opacity-90"
                     style={{ background: '#0064D2' }}
                   >
-                    <Plus className="w-3.5 h-3.5" /> Thêm điểm đến
+                    <Plus className="h-4 w-4" /> Thêm điểm đến
                   </button>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {(['all', 'Bắc', 'Trung', 'Nam', 'Quốc tế'] as const).map(region => {
-                    const count = region === 'all' ? destinations.length : destinations.filter(d => d.region === region).length;
-                    const isActive = destRegionFilter === region;
-                    const rc = region === 'all' ? { color: '#0064D2', bg: '#0064D2' } : regionColors[region];
-                    return (
-                      <button
-                        key={region}
-                        onClick={() => setDestRegionFilter(region)}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                        style={{
-                          background: isActive ? rc.bg : 'white',
-                          color: isActive ? (region === 'all' ? 'white' : rc.color) : '#6B7280',
-                          border: isActive ? 'none' : '1px solid #E5E7EB',
-                        }}
-                      >
-                        {region === 'all' ? 'Tất cả' : `Miền ${region}`} ({count})
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">Loại hình tour</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Provider chỉ thấy các loại đang bật khi tạo tour</p>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-400">{tourCategories.filter(item => item.active).length}/{tourCategories.length} đang bật</span>
                   </div>
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {tourCategories.map(category => (
-                      <div key={category.code} className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">{category.name}</p>
-                            <p className="mt-0.5 text-xs font-mono text-gray-400">{category.code}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = { ...category, active: !category.active };
-                              const previous = tourCategories;
-                              setTourCategories(prev => prev.map(item => item.code === category.code ? next : item));
-                              api.updateTourCategory(category.code, toTourCategoryPayload(next))
-                                .then(updated => setTourCategories(prev => prev.map(item => item.code === category.code ? toAdminTourCategory(updated) : item)))
-                                .catch(error => {
-                                  showAdminError('Không thể đổi trạng thái loại hình', error, 'Vui lòng thử lại sau.');
-                                  setTourCategories(previous);
-                                });
-                            }}
-                            className="rounded-full px-2.5 py-1 text-xs font-bold"
-                            style={{
-                              background: category.active ? '#DCFCE7' : '#FEE2E2',
-                              color: category.active ? '#15803D' : '#B91C1C',
-                            }}
-                          >
-                            {category.active ? 'Đang bật' : 'Đã tắt'}
-                          </button>
-                        </div>
-                        <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{category.description || 'Chưa có mô tả'}</p>
-                        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-                          <span className="text-xs text-gray-400">{category.tourCount} tour</span>
-                          <button
-                            type="button"
-                            onClick={() => openEditCategory(category)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-white"
-                          >
-                            <Edit className="w-3 h-3" /> Chỉnh sửa
-                          </button>
-                        </div>
+                </div>
+                <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
+                  <aside className="space-y-5 xl:sticky xl:top-5 xl:self-start">
+                    <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <p className="text-sm font-black text-gray-900">Bộ lọc vùng miền</p>
+                      <p className="mt-1 text-xs leading-5 text-gray-500">Chọn vùng để thu gọn danh sách điểm đến.</p>
+                      <div className="mt-4 space-y-2">
+                        {(['all', 'Bắc', 'Trung', 'Nam', 'Quốc tế'] as const).map(region => {
+                          const count = region === 'all' ? destinations.length : destinations.filter(d => d.region === region).length;
+                          const isActive = destRegionFilter === region;
+                          const rc = region === 'all' ? { color: '#0064D2', bg: '#EFF6FF' } : regionColors[region];
+                          return (
+                            <button
+                              key={region}
+                              onClick={() => setDestRegionFilter(region)}
+                              className="flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-bold transition-all"
+                              style={{
+                                background: isActive ? rc.bg : 'white',
+                                color: isActive ? rc.color : '#4B5563',
+                                borderColor: isActive ? rc.color : '#E5E7EB',
+                              }}
+                            >
+                              <span>{region === 'all' ? 'Tất cả vùng miền' : `Miền ${region}`}</span>
+                              <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs">{count}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    </div>
+
+                    <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="mb-4 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-gray-900">Loại hình tour</p>
+                          <p className="mt-1 text-xs leading-5 text-gray-500">Provider chỉ thấy loại đang bật.</p>
+                        </div>
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
+                          {tourCategories.filter(item => item.active).length}/{tourCategories.length}
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        {tourCategories.map(category => (
+                          <div key={category.code} className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-gray-900">{category.name}</p>
+                                <p className="mt-0.5 text-xs font-mono text-gray-400">{category.code}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = { ...category, active: !category.active };
+                                  const previous = tourCategories;
+                                  setTourCategories(prev => prev.map(item => item.code === category.code ? next : item));
+                                  api.updateTourCategory(category.code, toTourCategoryPayload(next))
+                                    .then(updated => setTourCategories(prev => prev.map(item => item.code === category.code ? toAdminTourCategory(updated) : item)))
+                                    .catch(error => {
+                                      showAdminError('Không thể đổi trạng thái loại hình', error, 'Vui lòng thử lại sau.');
+                                      setTourCategories(previous);
+                                    });
+                                }}
+                                className="rounded-full px-2.5 py-1 text-xs font-bold"
+                                style={{
+                                  background: category.active ? '#DCFCE7' : '#FEE2E2',
+                                  color: category.active ? '#15803D' : '#B91C1C',
+                                }}
+                              >
+                                {category.active ? 'Bật' : 'Tắt'}
+                              </button>
+                            </div>
+                            <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{category.description || 'Chưa có mô tả'}</p>
+                            <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+                              <span className="text-xs font-semibold text-gray-400">{category.tourCount} tour</span>
+                              <button
+                                type="button"
+                                onClick={() => openEditCategory(category)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                              >
+                                <Edit className="w-3 h-3" /> Sửa
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </aside>
+
+                  <section className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
                   {filtered.map(dest => {
                     const rc = regionColors[dest.region] ?? { color: '#374151', bg: '#F3F4F6' };
                     return (
-                      <div key={dest.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                      <div key={dest.id} className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-lg">
                         {/* Top: image + badge */}
-                        <div className="relative h-32 rounded-xl overflow-hidden mb-4">
+                        <div className="relative h-52 overflow-hidden">
                           <img
                             src={dest.image || 'https://images.unsplash.com/photo-1528127269322-539801943592?w=400'}
                             alt={dest.name}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                           />
                           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 55%)' }} />
                           <span
@@ -3304,20 +3355,19 @@ export function AdminPage() {
                         </div>
 
                         {/* Info */}
-                        <div className="mb-4">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className="font-bold text-gray-900 text-sm">{dest.name}</p>
-                            <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                        <div className="p-5">
+                          <div className="mb-2 flex items-start justify-between gap-3">
+                            <p className="text-lg font-black leading-tight text-gray-900">{dest.name}</p>
+                            <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-gray-50 px-3 py-1 text-xs font-bold text-gray-500">
                               <Package className="w-3 h-3" />
                               {dest.tourCount} tour
                             </span>
                           </div>
-                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{dest.description}</p>
-                        </div>
-                        <div className="flex gap-2 pt-3 border-t border-gray-100">
+                          <p className="min-h-[44px] text-sm leading-6 text-gray-500 line-clamp-2">{dest.description || 'Chưa có mô tả điểm đến.'}</p>
+                        <div className="mt-5 flex gap-3 border-t border-gray-100 pt-4">
                           <button
                             onClick={() => openEdit(dest)}
-                            className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-semibold transition-colors hover:bg-gray-50"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-colors hover:bg-gray-50"
                             style={{ border: '1px solid #E5E7EB', color: '#6B7280' }}
                           >
                             <Edit className="w-3 h-3" />
@@ -3325,16 +3375,18 @@ export function AdminPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(dest.id, dest.name)}
-                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-colors hover:bg-red-50"
+                            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors hover:bg-red-50"
                             style={{ color: '#DC2626', border: '1px solid #FECACA' }}
                           >
                             <Trash2 className="w-3 h-3" />
                             Xóa
                           </button>
                         </div>
+                        </div>
                       </div>
                     );
                   })}
+                  </section>
                 </div>
 
                 {/* Modal: Add / Edit */}
@@ -3344,13 +3396,13 @@ export function AdminPage() {
                     onClick={() => setDestModal({ open: false, editing: null })}
                   >
                     <div
-                      className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden"
+                      className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden"
                       onClick={e => e.stopPropagation()}
                     >
                       {/* Modal header */}
-                      <div className="px-6 py-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0A2540, #1E3A5F)' }}>
+                      <div className="px-7 py-6 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0A2540, #1E3A5F)' }}>
                         <div>
-                          <p className="font-bold text-white text-sm">{destModal.editing ? 'Chỉnh sửa điểm đến' : 'Thêm điểm đến mới'}</p>
+                          <p className="font-black text-white text-lg">{destModal.editing ? 'Chỉnh sửa điểm đến' : 'Thêm điểm đến mới'}</p>
                           <p className="text-xs text-white/60 mt-0.5">Điền đầy đủ thông tin bên dưới</p>
                         </div>
                         <button onClick={() => setDestModal({ open: false, editing: null })} className="p-2 rounded-xl hover:bg-white/10 transition-colors">
@@ -3358,47 +3410,68 @@ export function AdminPage() {
                         </button>
                       </div>
                       {/* Modal body */}
-                      <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                        <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1.5 block">Tên điểm đến *</label>
-                          <input className={inputCls} value={destForm.name} onChange={e => setDestForm(p => ({ ...p, name: e.target.value }))} placeholder="Vịnh Hạ Long" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1.5 block">Mô tả</label>
-                          <textarea className={inputCls} rows={3} value={destForm.description} onChange={e => setDestForm(p => ({ ...p, description: e.target.value }))} placeholder="Mô tả ngắn về điểm đến..." />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
+                      <div className="grid max-h-[76vh] gap-6 overflow-y-auto p-7 lg:grid-cols-[minmax(0,1fr)_340px]">
+                        <div className="space-y-5">
                           <div>
-                            <label className="text-xs font-bold text-gray-700 mb-1.5 block">Vùng miền</label>
+                            <label className="text-sm font-bold text-gray-700 mb-2 block">Tên điểm đến *</label>
+                            <input className={inputCls} value={destForm.name} onChange={e => setDestForm(p => ({ ...p, name: e.target.value }))} placeholder="Vịnh Hạ Long" />
+                          </div>
+                          <div>
+                            <label className="text-sm font-bold text-gray-700 mb-2 block">Mô tả</label>
+                            <textarea className={`${inputCls} resize-none`} rows={7} value={destForm.description} onChange={e => setDestForm(p => ({ ...p, description: e.target.value }))} placeholder="Mô tả ngắn về điểm đến..." />
+                          </div>
+                          <div>
+                            <label className="text-sm font-bold text-gray-700 mb-2 block">Vùng miền</label>
                             <select className={inputCls} value={destForm.region} onChange={e => setDestForm(p => ({ ...p, region: e.target.value as Destination['region'] }))}>
                               {(['Bắc', 'Trung', 'Nam', 'Quốc tế'] as const).map(r => (
                                 <option key={r} value={r}>Miền {r}</option>
                               ))}
                             </select>
                           </div>
-                          <div>
-                            <label className="text-xs font-bold text-gray-700 mb-1.5 block">URL Hình ảnh</label>
-                            <input className={inputCls} value={destForm.image} onChange={e => setDestForm(p => ({ ...p, image: e.target.value }))} placeholder="https://..." />
-                          </div>
                         </div>
-                        {destForm.image && (
-                          <div className="rounded-2xl overflow-hidden h-36">
-                            <img src={destForm.image} alt="preview" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        <div className="space-y-4">
+                          <div>
+                            <label className="mb-2 block text-sm font-bold text-gray-700">Hình ảnh điểm đến</label>
+                            <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center transition-colors hover:border-blue-400 hover:bg-blue-50">
+                              <ImageIcon className="h-8 w-8 text-blue-600" />
+                              <span className="text-sm font-black text-gray-800">Chọn ảnh từ máy</span>
+                              <span className="text-xs text-gray-500">JPG, PNG, WEBP. Ảnh sẽ upload lên Cloudinary khi lưu.</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={event => {
+                                  const file = event.target.files?.[0];
+                                  if (!file) return;
+                                  setDestImageFile(file);
+                                  setDestForm(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+                                }}
+                              />
+                            </label>
                           </div>
-                        )}
+                          {destForm.image ? (
+                            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                              <img src={destForm.image} alt="preview" className="h-72 w-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            </div>
+                          ) : (
+                            <div className="flex h-72 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-400">
+                              Chưa chọn ảnh
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {/* Modal footer */}
-                      <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+                      <div className="px-7 py-5 border-t border-gray-100 flex gap-3">
                         <button
                           onClick={handleSave}
                           disabled={!destForm.name.trim()}
-                          className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
+                          className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 flex items-center justify-center gap-2"
                           style={{ background: !destForm.name.trim() ? '#E5E7EB' : 'linear-gradient(135deg, #0064D2, #0091FF)', color: !destForm.name.trim() ? '#9CA3AF' : 'white' }}
                         >
                           <CheckCircle className="w-4 h-4" />
                           {destModal.editing ? 'Lưu thay đổi' : 'Thêm điểm đến'}
                         </button>
-                        <button onClick={() => setDestModal({ open: false, editing: null })} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ background: '#F3F4F6', color: '#6B7280' }}>
+                        <button onClick={() => setDestModal({ open: false, editing: null })} className="px-7 py-3.5 rounded-xl text-sm font-bold" style={{ background: '#F3F4F6', color: '#6B7280' }}>
                           Hủy
                         </button>
                       </div>

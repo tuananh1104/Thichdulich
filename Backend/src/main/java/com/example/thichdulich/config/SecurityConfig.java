@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users/change-password").authenticated()
                         .requestMatchers("/api/users/interactions/**").authenticated()
                         .requestMatchers("/api/users/favorites/**").authenticated()
+                        .requestMatchers("/api/uploads/**").authenticated()
                         .requestMatchers("/api/bookings/**").authenticated()
                         .requestMatchers("/api/payments/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/reports/pending").hasRole("ADMIN")

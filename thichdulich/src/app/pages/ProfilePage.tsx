@@ -30,6 +30,7 @@ export function ProfilePage() {
   const [profileErrors, setProfileErrors] = useState<{ name?: string; phone?: string }>({});
   const [passwordErrors, setPasswordErrors] = useState<{ currentPassword?: string; newPassword?: string; confirmPassword?: string }>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -66,7 +67,7 @@ export function ProfilePage() {
   const hasProfileChanges =
     normalizedName !== (user?.name || '') ||
     normalizedPhone !== (user?.phone || '') ||
-    !!avatarPreview;
+    !!avatarFile;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,10 +97,11 @@ export function ProfilePage() {
 
     try {
       setIsSavingProfile(true);
+      const uploadedAvatar = avatarFile ? await api.uploadImage(avatarFile, 'avatars') : null;
       const updated = await updateUser({
         name: normalizedName,
         phone: normalizedPhone,
-        avatar: avatarPreview || user?.avatar,
+        avatar: uploadedAvatar?.url || user?.avatar,
       });
 
       if (!updated) {
@@ -109,6 +111,7 @@ export function ProfilePage() {
 
       toast.success(t('profileUpdated'));
       setAvatarPreview(null);
+      setAvatarFile(null);
       setIsEditMode(false);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Không thể cập nhật thông tin cá nhân'));
@@ -185,10 +188,11 @@ export function ProfilePage() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+        setAvatarFile(file);
+        setAvatarPreview(URL.createObjectURL(file));
         toast.success('Đã tải ảnh lên! Nhấn Lưu để cập nhật.');
       };
-      reader.readAsDataURL(file);
+      reader.readAsArrayBuffer(file);
     }
   };
 
@@ -356,6 +360,7 @@ export function ProfilePage() {
                               onClick={() => {
                                 setIsEditMode(false);
                                 setAvatarPreview(null);
+                                setAvatarFile(null);
                                 setFormData({
                                   name: user?.name || '',
                                   email: user?.email || '',
