@@ -27,8 +27,10 @@ import java.util.UUID;
 public class CloudinaryUploadService {
     private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
 
-    private final ObjectMapper objectMapper;
-    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(20))
+            .build();
 
     @Value("${cloudinary.cloud-name:}")
     private String cloudName;
@@ -44,13 +46,6 @@ public class CloudinaryUploadService {
 
     @Value("${app.upload.max-image-size-bytes:5242880}")
     private long maxImageSizeBytes;
-
-    public CloudinaryUploadService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(20))
-                .build();
-    }
 
     public List<UploadResponseDTO> uploadImages(MultipartFile[] files, String folder) {
         if (files == null || files.length == 0) {
