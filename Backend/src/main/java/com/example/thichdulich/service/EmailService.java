@@ -37,11 +37,11 @@ public class EmailService {
         String displayName = name == null || name.isBlank() ? "ban" : name;
         String html = """
                 <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-                  <h2>Xac minh email Thich Du Lich</h2>
-                  <p>Xin chao %s,</p>
-                  <p>Ma OTP cua ban la:</p>
+                  <h2>Xác minh email Thích Du Lịch</h2>
+                  <p>Xin chào %s,</p>
+                  <p>Mã OTP của bạn là:</p>
                   <div style="font-size:28px;font-weight:700;letter-spacing:6px;margin:18px 0">%s</div>
-                  <p>Ma nay het han sau 5 phut. Neu ban khong tao tai khoan, vui long bo qua email nay.</p>
+                  <p>Mã này hết hạn sau 5 phút. Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.</p>
                 </div>
                 """.formatted(displayName, code);
 
@@ -53,7 +53,7 @@ public class EmailService {
                     .body(Map.of(
                             "from", fromEmail,
                             "to", List.of(email),
-                            "subject", "Ma xac minh email Thich Du Lich",
+                            "subject", "Mã xác minh email Thích Du Lịch",
                             "html", html
                     ))
                     .retrieve()
@@ -72,11 +72,11 @@ public class EmailService {
         String displayName = name == null || name.isBlank() ? "ban" : name;
         String html = """
                 <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-                  <h2>Dat lai mat khau Thich Du Lich</h2>
-                  <p>Xin chao %s,</p>
-                  <p>Ma OTP dat lai mat khau cua ban la:</p>
+                  <h2>Đặt lại mật khẩu Thích Du Lịch</h2>
+                  <p>Xin chào %s,</p>
+                  <p>Mã OTP đặt lại mật khẩu của bạn là:</p>
                   <div style="font-size:28px;font-weight:700;letter-spacing:6px;margin:18px 0">%s</div>
-                  <p>Ma nay het han sau 5 phut. Neu ban khong yeu cau dat lai mat khau, vui long bo qua email nay.</p>
+                  <p>Mã này hết hạn sau 5 phút. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
                 </div>
                 """.formatted(displayName, code);
 
@@ -88,7 +88,7 @@ public class EmailService {
                     .body(Map.of(
                             "from", fromEmail,
                             "to", List.of(email),
-                            "subject", "Ma dat lai mat khau Thich Du Lich",
+                            "subject", "Mã đặt lại mật khẩu Thích Du Lịch",
                             "html", html
                     ))
                     .retrieve()
