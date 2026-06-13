@@ -21,6 +21,7 @@ import {
 import { LogoutConfirmModal } from '../components/LogoutConfirmModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SuccessModal } from '../components/SuccessModal';
+import { NotificationBell } from '../components/NotificationBell';
 import { MessagingSystem, type Conversation as ChatConversation } from '../components/MessagingSystem';
 import { getProviderStatusLabel, getTourTypeLabel } from '../utils/labels';
 
@@ -1637,12 +1638,15 @@ export function AdminPage() {
             </h1>
             <p className="text-xs text-gray-500">Thích Du Lịch · Hệ thống quản trị</p>
           </div>
-          {activeNav === 'approve' && pendingTours.length > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}>
-              <AlertTriangle className="w-4 h-4" style={{ color: '#D97706' }} />
-              <span className="text-xs font-semibold" style={{ color: '#92400E' }}>{pendingTours.length} tour đang chờ duyệt</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            {activeNav === 'approve' && pendingTours.length > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}>
+                <AlertTriangle className="w-4 h-4" style={{ color: '#D97706' }} />
+                <span className="text-xs font-semibold" style={{ color: '#92400E' }}>{pendingTours.length} tour đang chờ duyệt</span>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className={activeNav === 'messages' ? 'min-h-0 flex-1 overflow-hidden p-4' : 'console-content min-h-0 flex-1 overflow-auto'}>

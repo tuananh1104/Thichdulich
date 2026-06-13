@@ -21,6 +21,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { SuccessModal } from '../components/SuccessModal';
 import { CreateTourModal } from '../components/CreateTourModal';
 import { MessagingSystem, type Conversation as ChatConversation } from '../components/MessagingSystem';
+import { NotificationBell } from '../components/NotificationBell';
 import { getIncludeLabel } from '../utils/includeLabels';
 import { getProviderStatusLabel, getTourTypeLabel as getSharedTourTypeLabel } from '../utils/labels';
 
@@ -1199,6 +1200,7 @@ export function ProviderPage() {
             <p className="text-xs text-gray-500 mt-0.5">Quản lý và theo dõi hoạt động kinh doanh</p>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             {activeNav === 'tours' && (
               <button
                 onClick={() => setShowCreateModal(true)}
