@@ -2549,7 +2549,13 @@ export function AdminPage() {
                     <p className="mt-1 text-sm text-gray-400">Thử đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div>
+                    <div className="hidden grid-cols-[minmax(0,1.15fr)_minmax(300px,1fr)_140px_120px] gap-4 border-b border-gray-100 bg-gray-50/80 px-5 py-3 text-xs font-black uppercase tracking-wide text-gray-400 xl:grid">
+                      <span>Khách & nội dung đánh giá</span>
+                      <span>Tour được đánh giá</span>
+                      <span className="text-center">Trạng thái</span>
+                      <span className="text-right">Thời gian</span>
+                    </div>
                     {paginatedReviews.map(review => {
                       const tour = tours.find(item => item.id === review.tourId);
                       const status = review.response
@@ -2562,7 +2568,7 @@ export function AdminPage() {
                           key={review.id}
                           type="button"
                           onClick={() => setSelectedReviewDetail(review)}
-                          className="grid w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_140px_120px]"
+                          className="grid w-full gap-4 border-b border-gray-100 px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-gray-50 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,1fr)_140px_120px]"
                         >
                           <div className="min-w-0">
                             <div className="flex items-center gap-3">
@@ -2579,11 +2585,37 @@ export function AdminPage() {
                               </div>
                             </div>
                             <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{review.comment || 'Không có nội dung đánh giá.'}</p>
+                            {review.images && review.images.length > 0 && (
+                              <div className="mt-3 flex items-center gap-2">
+                                {review.images.slice(0, 3).map((image, index) => (
+                                  <div key={index} className="h-12 w-12 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+                                    <img src={image} alt={`Ảnh đánh giá ${index + 1}`} className="h-full w-full object-cover" />
+                                  </div>
+                                ))}
+                                {review.images.length > 3 && (
+                                  <span className="rounded-xl bg-gray-100 px-2.5 py-1 text-xs font-black text-gray-500">
+                                    +{review.images.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-gray-900">{tour?.name.vi || review.tourName || 'Tour không xác định'}</p>
-                            <p className="mt-1 truncate text-xs text-gray-500">{tour?.providerName || 'Nhà cung cấp'}</p>
-                            <p className="mt-1 truncate text-xs text-gray-400">{tour?.location || ''}</p>
+                          <div className="min-w-0 rounded-2xl border border-blue-100 bg-blue-50/60 p-3">
+                            <div className="flex gap-3">
+                              {tour?.image ? (
+                                <img src={tour.image} alt={tour.name.vi} className="h-16 w-20 shrink-0 rounded-xl object-cover" />
+                              ) : (
+                                <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-xl bg-white">
+                                  <Package className="h-5 w-5 text-gray-300" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="mb-1 text-[11px] font-black uppercase tracking-wide text-blue-500">Tour được đánh giá</p>
+                                <p className="line-clamp-2 text-sm font-black text-gray-900">{tour?.name.vi || review.tourName || 'Tour không xác định'}</p>
+                                <p className="mt-1 truncate text-xs font-semibold text-gray-600">{tour?.providerName || 'Nhà cung cấp'}</p>
+                                <p className="mt-1 truncate text-xs text-gray-500">{tour?.location || 'Chưa có địa điểm'}</p>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex items-start xl:justify-center">
                             <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: status.bg, color: status.color }}>
