@@ -3063,36 +3063,81 @@ export function AdminPage() {
                     <p className="mt-1 text-sm text-gray-400">Thử đổi trạng thái hoặc từ khóa tìm kiếm.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div>
+                    <div className="hidden grid-cols-[150px_minmax(320px,1.25fr)_minmax(0,1fr)_150px_120px] gap-4 border-b border-gray-100 bg-gray-50/80 px-5 py-3 text-xs font-black uppercase tracking-wide text-gray-400 xl:grid">
+                      <span>Trạng thái</span>
+                      <span>Tour bị báo cáo</span>
+                      <span>Lý do & nội dung</span>
+                      <span className="text-right">Bằng chứng</span>
+                      <span className="text-right">Thao tác</span>
+                    </div>
                     {paginatedReports.map(report => {
                       const tour = tours.find(item => item.id === report.tourId);
                       const st = reportStatusMap[report.status] || reportStatusMap.pending;
+                      const needsAction = report.status === 'pending' || report.status === 'reviewed';
                       return (
                         <button
                           key={report.id}
                           type="button"
                           onClick={() => setSelectedReportDetail(report)}
-                          className="grid w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 xl:grid-cols-[150px_minmax(0,1.25fr)_minmax(0,1fr)_140px_120px]"
+                          className="grid w-full gap-4 border-b border-gray-100 px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-gray-50 xl:grid-cols-[150px_minmax(320px,1.25fr)_minmax(0,1fr)_150px_120px]"
                         >
                           <div>
-                            <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: st.bg, color: st.color }}>
-                              {st.label}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: st.bg, color: st.color }}>
+                                {st.label}
+                              </span>
+                              {needsAction && (
+                                <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-black text-red-700">
+                                  Cần xử lý
+                                </span>
+                              )}
+                            </div>
                             <p className="mt-2 text-xs font-semibold text-gray-400">#{report.id.slice(0, 8)}</p>
+                            <p className="mt-1 text-xs text-gray-400">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-black text-gray-900">{tour?.name.vi || report.tourName || 'Tour không xác định'}</p>
-                            <p className="mt-1 truncate text-xs text-gray-500">{tour?.providerName || 'Nhà cung cấp'}</p>
-                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{report.description || 'Không có mô tả chi tiết.'}</p>
+                          <div className="min-w-0 rounded-2xl border border-red-100 bg-red-50/50 p-3">
+                            <div className="flex gap-3">
+                              {tour?.image ? (
+                                <img src={tour.image} alt={tour.name.vi} className="h-16 w-20 shrink-0 rounded-xl object-cover" />
+                              ) : (
+                                <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-xl bg-white">
+                                  <Package className="h-5 w-5 text-gray-300" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <p className="mb-1 text-[11px] font-black uppercase tracking-wide text-red-500">Tour bị báo cáo</p>
+                                <p className="line-clamp-2 text-sm font-black text-gray-900">{tour?.name.vi || report.tourName || 'Tour không xác định'}</p>
+                                <p className="mt-1 truncate text-xs font-semibold text-gray-600">{tour?.providerName || 'Nhà cung cấp'}</p>
+                                <p className="mt-1 truncate text-xs text-gray-500">{tour?.location || 'Chưa có địa điểm'}</p>
+                              </div>
+                            </div>
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-black uppercase text-gray-400">Lý do</p>
                             <p className="mt-1 line-clamp-2 text-sm font-bold text-red-700">{report.reason}</p>
                             <p className="mt-2 truncate text-xs text-gray-500">{report.reporterName || 'Khách hàng'}</p>
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{report.description || 'Không có mô tả chi tiết.'}</p>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            <p className="font-bold text-gray-700">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
-                            <p className="mt-1 text-xs">{report.images?.length || 0} ảnh</p>
+                          <div className="text-sm text-gray-500 xl:text-right">
+                            {report.images && report.images.length > 0 ? (
+                              <div className="flex items-center gap-2 xl:justify-end">
+                                {report.images.slice(0, 2).map((image, index) => (
+                                  <div key={index} className="h-12 w-12 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+                                    <img src={image} alt={`Bằng chứng ${index + 1}`} className="h-full w-full object-cover" />
+                                  </div>
+                                ))}
+                                {report.images.length > 2 && (
+                                  <span className="rounded-xl bg-gray-100 px-2.5 py-1 text-xs font-black text-gray-500">
+                                    +{report.images.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="rounded-xl bg-gray-100 px-3 py-2 text-xs font-bold text-gray-500">
+                                Không có ảnh
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-start xl:justify-end">
                             <span className="rounded-xl border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700">
