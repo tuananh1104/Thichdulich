@@ -2658,7 +2658,28 @@ export function AdminPage() {
                       </button>
                     </div>
                     <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                      <div className="overflow-hidden rounded-3xl border border-blue-100 bg-blue-50/60">
+                        <div className="flex gap-4 p-4">
+                          {selectedReviewDetailTour?.image ? (
+                            <img src={selectedReviewDetailTour.image} alt={selectedReviewDetailTour.name.vi} className="h-24 w-32 shrink-0 rounded-2xl object-cover" />
+                          ) : (
+                            <div className="flex h-24 w-32 shrink-0 items-center justify-center rounded-2xl bg-white">
+                              <Package className="h-7 w-7 text-gray-300" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-black uppercase tracking-wide text-blue-600">Tour được đánh giá</p>
+                            <p className="mt-1 line-clamp-2 text-base font-black text-gray-950">{selectedReviewDetailTour?.name.vi || selectedReviewDetail.tourName || 'Tour không xác định'}</p>
+                            <div className="mt-2 grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                              <span className="rounded-xl bg-white/80 px-3 py-2 font-semibold">{selectedReviewDetailTour?.providerName || 'Nhà cung cấp'}</span>
+                              <span className="rounded-xl bg-white/80 px-3 py-2 font-semibold">{selectedReviewDetailTour?.location || 'Chưa có địa điểm'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5">
+                        <p className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">Nội dung đánh giá</p>
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="font-black text-gray-900">{selectedReviewDetail.userName || 'Khách hàng'}</p>
@@ -2673,8 +2694,9 @@ export function AdminPage() {
                         <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-gray-700">{selectedReviewDetail.comment || 'Không có nội dung đánh giá.'}</p>
                       </div>
 
-                      {selectedReviewDetail.images && selectedReviewDetail.images.length > 0 && (
-                        <div>
+                      <div>
+                        {selectedReviewDetail.images && selectedReviewDetail.images.length > 0 ? (
+                        <>
                           <p className="mb-3 text-xs font-black uppercase text-gray-500">Ảnh đánh giá</p>
                           <div className="grid grid-cols-3 gap-3">
                             {selectedReviewDetail.images.map((image, index) => (
@@ -2683,8 +2705,13 @@ export function AdminPage() {
                               </a>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        </>
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-400">
+                            Không có ảnh đánh giá.
+                          </div>
+                        )}
+                      </div>
 
                       {selectedReviewDetail.response ? (
                         <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5">
@@ -2699,7 +2726,9 @@ export function AdminPage() {
                         </div>
                       ) : null}
                     </div>
-                    <div className="flex flex-col gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row">
+                    <div className="border-t border-gray-100 bg-gray-50 px-6 py-4">
+                      <p className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">Hành động admin</p>
+                      <div className="flex flex-col gap-3 sm:flex-row">
                       {!selectedReviewDetail.response && (
                         <button onClick={() => handleRequestProviderReviewResponse(selectedReviewDetail)} disabled={selectedReviewDetail.responseRequested} className="flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all hover:opacity-90" style={{ background: selectedReviewDetail.responseRequested ? '#F3F4F6' : '#F5F3FF', color: selectedReviewDetail.responseRequested ? '#9CA3AF' : '#7C3AED' }}>
                           <MessageSquare className="h-4 w-4" />
@@ -2722,6 +2751,7 @@ export function AdminPage() {
                         <Trash2 className="h-4 w-4" />
                         Xóa đánh giá
                       </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3176,25 +3206,52 @@ export function AdminPage() {
                       </button>
                     </div>
                     <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                      <div className="overflow-hidden rounded-3xl border border-red-100 bg-red-50/60">
+                        <div className="flex gap-4 p-4">
+                          {selectedReportDetailTour?.image ? (
+                            <img src={selectedReportDetailTour.image} alt={selectedReportDetailTour.name.vi} className="h-24 w-32 shrink-0 rounded-2xl object-cover" />
+                          ) : (
+                            <div className="flex h-24 w-32 shrink-0 items-center justify-center rounded-2xl bg-white">
+                              <Package className="h-7 w-7 text-gray-300" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-black uppercase tracking-wide text-red-600">Tour bị báo cáo</p>
+                            <p className="mt-1 line-clamp-2 text-base font-black text-gray-950">{selectedReportDetailTour?.name.vi || selectedReportDetail.tourName || 'Tour không xác định'}</p>
+                            <div className="mt-2 grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                              <span className="rounded-xl bg-white/80 px-3 py-2 font-semibold">{selectedReportDetailTour?.providerName || 'Nhà cung cấp'}</span>
+                              <span className="rounded-xl bg-white/80 px-3 py-2 font-semibold">{selectedReportDetailTour?.location || 'Chưa có địa điểm'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {(() => {
                         const st = reportStatusMap[selectedReportDetail.status] || reportStatusMap.pending;
                         return (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: st.bg, color: st.color }}>{st.label}</span>
-                            <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">{selectedReportDetail.reason}</span>
-                            <span className="text-xs text-gray-400">{new Date(selectedReportDetail.createdAt).toLocaleString('vi-VN')}</span>
+                          <div className="rounded-2xl border border-gray-100 bg-white p-4">
+                            <p className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">Trạng thái xử lý</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                              {(selectedReportDetail.status === 'pending' || selectedReportDetail.status === 'reviewed') && (
+                                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">Cần xử lý</span>
+                              )}
+                              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">{selectedReportDetail.reason}</span>
+                              <span className="text-xs text-gray-400">{new Date(selectedReportDetail.createdAt).toLocaleString('vi-VN')}</span>
+                            </div>
                           </div>
                         );
                       })()}
 
                       <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5">
-                        <p className="text-xs font-black uppercase text-gray-500">Người báo cáo</p>
+                        <p className="text-xs font-black uppercase tracking-wide text-gray-500">Nội dung báo cáo</p>
                         <p className="mt-1 text-sm font-black text-gray-900">{selectedReportDetail.reporterName || 'Khách hàng'}</p>
                         <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-gray-700">{selectedReportDetail.description || 'Không có mô tả chi tiết.'}</p>
                       </div>
 
-                      {selectedReportDetail.images && selectedReportDetail.images.length > 0 && (
-                        <div>
+                      <div>
+                        {selectedReportDetail.images && selectedReportDetail.images.length > 0 ? (
+                        <>
                           <p className="mb-3 text-xs font-black uppercase text-gray-500">Bằng chứng ảnh</p>
                           <div className="grid grid-cols-3 gap-3">
                             {selectedReportDetail.images.map((image, index) => (
@@ -3203,8 +3260,13 @@ export function AdminPage() {
                               </a>
                             ))}
                           </div>
-                        </div>
-                      )}
+                        </>
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-400">
+                            Không có bằng chứng ảnh.
+                          </div>
+                        )}
+                      </div>
 
                       {selectedReportDetail.adminNote && (
                         <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5">
@@ -3214,7 +3276,9 @@ export function AdminPage() {
                         </div>
                       )}
                     </div>
-                    <div className="grid gap-3 border-t border-gray-100 px-6 py-4 sm:grid-cols-2">
+                    <div className="border-t border-gray-100 bg-gray-50 px-6 py-4">
+                      <p className="mb-3 text-xs font-black uppercase tracking-wide text-gray-500">Hành động xử lý</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
                       {selectedReportDetail.status === 'pending' && (
                         <button onClick={() => handleReviewReport(selectedReportDetail)} className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold" style={{ background: '#F5F3FF', color: '#7C3AED' }}>
                           <Check className="h-4 w-4" />
@@ -3237,6 +3301,12 @@ export function AdminPage() {
                           </button>
                         </>
                       )}
+                      {(selectedReportDetail.status === 'resolved' || selectedReportDetail.status === 'dismissed') && (
+                        <div className="rounded-xl bg-white p-4 text-center text-sm font-semibold text-gray-500 sm:col-span-2">
+                          Báo cáo đã kết thúc xử lý.
+                        </div>
+                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
