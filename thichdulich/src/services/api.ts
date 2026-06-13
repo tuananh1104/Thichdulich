@@ -37,9 +37,6 @@ class ApiClient {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
     });
 
     // Thêm token JWT vào header nếu có
@@ -47,6 +44,16 @@ class ApiClient {
       const token = localStorage.getItem('authToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+      if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+        const headers = config.headers as any;
+        if (typeof headers?.delete === 'function') {
+          headers.delete('Content-Type');
+          headers.delete('content-type');
+        } else if (headers) {
+          delete headers['Content-Type'];
+          delete headers['content-type'];
+        }
       }
       return config;
     });
