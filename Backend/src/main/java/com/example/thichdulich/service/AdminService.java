@@ -57,6 +57,9 @@ public class AdminService {
     @Autowired
     private UserInteractionRepository userInteractionRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public List<TourDTO> getAllTours() {
         return tourRepository.findAll()
                 .stream()
@@ -122,7 +125,18 @@ public class AdminService {
             provider.getUser().setIsActive(enabled);
             provider.getUser().setIsBanned(!enabled);
         }
-        return toProviderProfileDTO(providerRepository.save(provider));
+        Provider saved = providerRepository.save(provider);
+        if (saved.getUser() != null) {
+            notificationService.notifyUser(
+                    saved.getUser(),
+                    "provider_status",
+                    "Trạng thái nhà cung cấp đã cập nhật",
+                    "Hồ sơ " + saved.getCompanyName() + " đã chuyển sang trạng thái " + nextStatus.name() + ".",
+                    "/provider/overview",
+                    "{\"providerId\":\"" + saved.getId() + "\"}"
+            );
+        }
+        return toProviderProfileDTO(saved);
     }
 
     public List<TourReportDTO> getAllReports() {
@@ -326,7 +340,10 @@ public class AdminService {
         tour.setReviewedAt(LocalDateTime.now());
         tour.setReviewedBy(admin);
         tour.setAdminNotes(adminNotes);
-        return DtoMapper.toTourDTO(tourRepository.save(tour));
+        Tour saved = tourRepository.save(tour);
+        notifyTourProvider(saved, "tour_approved", "Tour đã được duyệt",
+                "Tour " + saved.getNameVi() + " đã được duyệt và có thể hiển thị công khai.");
+        return DtoMapper.toTourDTO(saved);
     }
 
     public TourDTO rejectTour(String tourId, String adminId, String reason, String adminNotes) {
@@ -338,7 +355,10 @@ public class AdminService {
         tour.setAdminNotes(adminNotes);
         tour.setReviewedAt(LocalDateTime.now());
         tour.setReviewedBy(admin);
-        return DtoMapper.toTourDTO(tourRepository.save(tour));
+        Tour saved = tourRepository.save(tour);
+        notifyTourProvider(saved, "tour_rejected", "Tour bị từ chối",
+                "Tour " + saved.getNameVi() + " đã bị từ chối. Lý do: " + reason);
+        return DtoMapper.toTourDTO(saved);
     }
 
     public TourDTO requestTourEdit(String tourId, String adminId, String notes) {
@@ -349,7 +369,10 @@ public class AdminService {
         tour.setAdminNotes(notes);
         tour.setReviewedAt(LocalDateTime.now());
         tour.setReviewedBy(admin);
-        return DtoMapper.toTourDTO(tourRepository.save(tour));
+        Tour saved = tourRepository.save(tour);
+        notifyTourProvider(saved, "tour_need_edit", "Tour cần chỉnh sửa",
+                "Admin yêu cầu chỉnh sửa tour " + saved.getNameVi() + ".");
+        return DtoMapper.toTourDTO(saved);
     }
 
     public List<TourDTO> removePromotions(List<String> tourIds) {
@@ -393,7 +416,10 @@ public class AdminService {
         if (tour.getPromotionSource() == null || tour.getPromotionSource().isBlank()) {
             tour.setPromotionSource("provider");
         }
-        return DtoMapper.toTourDTO(tourRepository.save(tour));
+        Tour saved = tourRepository.save(tour);
+        notifyTourProvider(saved, "tour_promotion_approved", "Ưu đãi đã được duyệt",
+                "Ưu đãi của tour " + saved.getNameVi() + " đã được duyệt.");
+        return DtoMapper.toTourDTO(saved);
     }
 
     public List<TourReportDTO> getPendingReports() {
@@ -411,7 +437,10 @@ public class AdminService {
         report.setAdminNote(adminNote);
         report.setReviewedBy(admin);
         report.setReviewedAt(LocalDateTime.now());
-        return DtoMapper.toReportDTO(reportRepository.save(report));
+        TourReport saved = reportRepository.save(report);
+        notifyReportParticipants(saved, "report_resolved", "Báo cáo đã được xử lý",
+                "Báo cáo về tour " + saved.getTour().getNameVi() + " đã được xử lý.");
+        return DtoMapper.toReportDTO(saved);
     }
 
     public TourReportDTO reviewReport(String reportId, String adminId, String adminNote) {
@@ -422,7 +451,10 @@ public class AdminService {
         report.setAdminNote(adminNote);
         report.setReviewedBy(admin);
         report.setReviewedAt(LocalDateTime.now());
-        return DtoMapper.toReportDTO(reportRepository.save(report));
+        TourReport saved = reportRepository.save(report);
+        notifyReportParticipants(saved, "report_reviewed", "Báo cáo đang được xem xét",
+                "Báo cáo về tour " + saved.getTour().getNameVi() + " đã được admin xem xét.");
+        return DtoMapper.toReportDTO(saved);
     }
 
     public TourReportDTO dismissReport(String reportId, String adminId, String adminNote) {
@@ -433,7 +465,43 @@ public class AdminService {
         report.setAdminNote(adminNote);
         report.setReviewedBy(admin);
         report.setReviewedAt(LocalDateTime.now());
-        return DtoMapper.toReportDTO(reportRepository.save(report));
+        TourReport saved = reportRepository.save(report);
+        notifyReportParticipants(saved, "report_dismissed", "Báo cáo đã được bỏ qua",
+                "Báo cáo về tour " + saved.getTour().getNameVi() + " đã được admin bỏ qua.");
+        return DtoMapper.toReportDTO(saved);
+    }
+
+    private void notifyTourProvider(Tour tour, String type, String title, String message) {
+        User providerUser = tour.getProvider() != null ? tour.getProvider().getUser() : null;
+        notificationService.notifyUser(
+                providerUser,
+                type,
+                title,
+                message,
+                "/provider/tours",
+                "{\"tourId\":\"" + tour.getId() + "\"}"
+        );
+    }
+
+    private void notifyReportParticipants(TourReport report, String type, String title, String message) {
+        notificationService.notifyUser(
+                report.getReportedBy(),
+                type,
+                title,
+                message,
+                "/my-bookings",
+                "{\"reportId\":\"" + report.getId() + "\",\"tourId\":\"" + report.getTour().getId() + "\"}"
+        );
+        if (report.getTour() != null && report.getTour().getProvider() != null) {
+            notificationService.notifyUser(
+                    report.getTour().getProvider().getUser(),
+                    type,
+                    title,
+                    message,
+                    "/provider/reports",
+                    "{\"reportId\":\"" + report.getId() + "\",\"tourId\":\"" + report.getTour().getId() + "\"}"
+            );
+        }
     }
 
     private ProviderProfileDTO toProviderProfileDTO(Provider provider) {

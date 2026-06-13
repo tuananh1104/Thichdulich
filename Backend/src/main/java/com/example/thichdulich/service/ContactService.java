@@ -30,6 +30,9 @@ public class ContactService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public ContactMessageDTO sendMessage(ContactMessageDTO messageDTO) {
         return sendMessage(messageDTO, null);
     }
@@ -45,7 +48,15 @@ public class ContactService {
         message.setSubject(messageDTO.getSubject());
         message.setMessage(messageDTO.getMessage());
         message.setStatus("new");
-        return DtoMapper.toContactDTO(contactRepository.save(message));
+        ContactMessage saved = contactRepository.save(message);
+        notificationService.notifyAdmins(
+                "admin_new_contact",
+                "Liên hệ mới",
+                saved.getName() + " vừa gửi yêu cầu: " + saved.getSubject(),
+                "/admin/support",
+                "{\"contactId\":\"" + saved.getId() + "\"}"
+        );
+        return DtoMapper.toContactDTO(saved);
     }
 
     public List<ContactMessageDTO> getAllMessages() {
@@ -104,6 +115,14 @@ public class ContactService {
                 saved.getSubject(),
                 saved.getMessage(),
                 saved.getReplyMessage()
+        );
+        notificationService.notifyUser(
+                saved.getUser(),
+                "contact_replied",
+                "Yêu cầu liên hệ đã được phản hồi",
+                "Admin đã phản hồi yêu cầu: " + saved.getSubject(),
+                "/contact",
+                "{\"contactId\":\"" + saved.getId() + "\"}"
         );
         return DtoMapper.toContactDTO(saved);
     }

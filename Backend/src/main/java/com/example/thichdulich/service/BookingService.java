@@ -56,6 +56,9 @@ public class BookingService {
     @Autowired
     private TourReportRepository reportRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public BookingDTO createBooking(String userId, BookingDTO bookingDTO) {
         expirePendingPaymentBookings();
         User user = userRepository.findById(userId)
@@ -114,6 +117,7 @@ public class BookingService {
         booking.setSpecialRequests(bookingDTO.getSpecialRequests());
 
         Booking saved = bookingRepository.save(booking);
+        notifyProviderNewBooking(saved);
 
 
         return toBookingDTO(bookingRepository.findById(saved.getId()).orElseThrow());
@@ -135,6 +139,8 @@ public class BookingService {
                 ? Booking.BookingStatus.deposited
                 : Booking.BookingStatus.paid);
         bookingRepository.save(booking);
+        notifyBookingUser(booking, "booking_payment", "Thanh toán đã được ghi nhận",
+                "Thanh toán cho tour " + booking.getTour().getNameVi() + " đã được ghi nhận.", "/bookings");
         return toBookingDTO(booking);
     }
 
@@ -265,7 +271,10 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn đặt tour"));
         Booking.BookingStatus nextStatus = Booking.BookingStatus.valueOf(status.toLowerCase());
         applyBookingStatus(booking, nextStatus);
-        return toBookingDTO(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        notifyBookingUser(saved, "booking_status", "Trạng thái booking đã cập nhật",
+                "Booking tour " + saved.getTour().getNameVi() + " đã chuyển sang trạng thái " + nextStatus.name() + ".", "/bookings");
+        return toBookingDTO(saved);
     }
 
     public BookingDTO updateBookingStatus(String bookingId, String status, String actorUserId, boolean isAdmin) {
@@ -274,7 +283,10 @@ public class BookingService {
         assertCanManageBooking(booking, actorUserId, isAdmin);
         Booking.BookingStatus nextStatus = Booking.BookingStatus.valueOf(status.toLowerCase());
         applyBookingStatus(booking, nextStatus);
-        return toBookingDTO(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        notifyBookingUser(saved, "booking_status", "Trạng thái booking đã cập nhật",
+                "Booking tour " + saved.getTour().getNameVi() + " đã chuyển sang trạng thái " + nextStatus.name() + ".", "/bookings");
+        return toBookingDTO(saved);
     }
 
     public void cancelBooking(String bookingId) {
@@ -321,7 +333,10 @@ public class BookingService {
         booking.setRefundProcessedBy(adminUserId);
         booking.setStatus(Booking.BookingStatus.refunded);
         booking.setPaymentStatus(Booking.PaymentStatus.refunded);
-        return toBookingDTO(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        notifyBookingUser(saved, "booking_refunded", "Đã hoàn tiền",
+                "Yêu cầu hoàn tiền cho tour " + saved.getTour().getNameVi() + " đã được xử lý.", "/bookings");
+        return toBookingDTO(saved);
     }
 
     public BookingDTO rejectRefund(String bookingId, String adminUserId, String reason) {
@@ -334,7 +349,10 @@ public class BookingService {
         booking.setRefundRejectReason(reason);
         booking.setRefundProcessedAt(LocalDateTime.now());
         booking.setRefundProcessedBy(adminUserId);
-        return toBookingDTO(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        notifyBookingUser(saved, "booking_refund_rejected", "Yêu cầu hoàn tiền bị từ chối",
+                "Yêu cầu hoàn tiền cho tour " + saved.getTour().getNameVi() + " đã bị từ chối.", "/bookings");
+        return toBookingDTO(saved);
     }
 
     public BookingDTO markPaidOut(String bookingId, String adminUserId) {
@@ -533,6 +551,34 @@ public class BookingService {
         }
         applyBookingStatus(booking, Booking.BookingStatus.cancelled);
         bookingRepository.save(booking);
+        notifyBookingUser(booking, "booking_cancelled", "Booking đã bị hủy",
+                "Booking tour " + booking.getTour().getNameVi() + " đã được ghi nhận hủy.", "/bookings");
+    }
+
+    private void notifyProviderNewBooking(Booking booking) {
+        User providerUser = booking.getTour() != null
+                && booking.getTour().getProvider() != null
+                ? booking.getTour().getProvider().getUser()
+                : null;
+        notificationService.notifyUser(
+                providerUser,
+                "provider_new_booking",
+                "Có booking mới",
+                booking.getContactName() + " vừa đặt tour " + booking.getTour().getNameVi() + ".",
+                "/provider/bookings",
+                "{\"bookingId\":\"" + booking.getId() + "\",\"tourId\":\"" + booking.getTour().getId() + "\"}"
+        );
+    }
+
+    private void notifyBookingUser(Booking booking, String type, String title, String message, String link) {
+        notificationService.notifyUser(
+                booking.getUser(),
+                type,
+                title,
+                message,
+                link,
+                "{\"bookingId\":\"" + booking.getId() + "\",\"tourId\":\"" + booking.getTour().getId() + "\"}"
+        );
     }
 
     private String cancellationActor(Booking booking, String actorUserId) {

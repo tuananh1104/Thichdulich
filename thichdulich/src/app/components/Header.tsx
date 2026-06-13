@@ -15,6 +15,17 @@ import {
 } from './ui/dropdown-menu';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 import { getHomePathForRole } from './ProtectedRoute';
+import api from '@/services/api';
+
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
+  createdAt: string;
+}
 
 const LOGO_SVG = (
   <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
@@ -36,6 +47,8 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -51,6 +64,72 @@ export function Header() {
 
   const handleLogout = () => { logout(); navigate('/'); };
   const logoTarget = user ? getHomePathForRole(user.role) : '/';
+
+  const loadNotifications = async () => {
+    if (!isAuthenticated || !user || document.hidden) return;
+    try {
+      const [items, count] = await Promise.all([
+        api.getNotifications(10),
+        api.getNotificationUnreadCount(),
+      ]);
+      setNotifications(items || []);
+      setNotificationCount(count || 0);
+    } catch {
+      setNotifications([]);
+      setNotificationCount(0);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setNotifications([]);
+      setNotificationCount(0);
+      return;
+    }
+    loadNotifications();
+    const intervalId = window.setInterval(loadNotifications, 20000);
+    const onVisibilityChange = () => {
+      if (!document.hidden) loadNotifications();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const openNotification = async (item: NotificationItem) => {
+    if (!item.read) {
+      try {
+        await api.markNotificationRead(item.id);
+      } catch {
+        // Ignore; navigation should still work.
+      }
+      setNotifications(prev => prev.map(current => current.id === item.id ? { ...current, read: true } : current));
+      setNotificationCount(prev => Math.max(0, prev - 1));
+    }
+    if (item.link) navigate(item.link);
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      setNotifications(prev => prev.map(item => ({ ...item, read: true })));
+      setNotificationCount(0);
+    } catch {
+      // Keep current state if the request fails.
+    }
+  };
+
+  const notificationTime = (value: string) => {
+    const date = new Date(value);
+    const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (diffMinutes < 1) return 'Vừa xong';
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  };
 
   const navItems = [
     { to: '/', label: 'Trang chủ', icon: Home },
@@ -157,6 +236,74 @@ export function Header() {
             <div className="flex items-center gap-1.5">
 
               {isAuthenticated && user ? (
+                <>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 hover:bg-white/15"
+                      style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.18)',
+                      }}
+                      aria-label="Thông báo"
+                    >
+                      <Bell className="h-4 w-4 text-white" />
+                      {notificationCount > 0 && (
+                        <span className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black leading-[18px] text-white shadow-lg">
+                          {notificationCount > 9 ? '9+' : notificationCount}
+                        </span>
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-[360px] rounded-2xl border-0 p-0 shadow-2xl z-[9999]"
+                    style={{ background: 'white' }}
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-black text-gray-900">Thông báo</p>
+                        <p className="text-xs text-gray-500">{notificationCount} chưa đọc</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={markAllNotificationsRead}
+                        className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 disabled:opacity-40"
+                        disabled={notificationCount === 0}
+                      >
+                        Đánh dấu đã đọc
+                      </button>
+                    </div>
+                    <div className="max-h-[420px] overflow-y-auto p-2">
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-10 text-center">
+                          <Bell className="mx-auto mb-3 h-9 w-9 text-gray-200" />
+                          <p className="text-sm font-bold text-gray-600">Chưa có thông báo</p>
+                          <p className="mt-1 text-xs text-gray-400">Các cập nhật quan trọng sẽ xuất hiện ở đây.</p>
+                        </div>
+                      ) : notifications.map(item => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => openNotification(item)}
+                          className="flex w-full gap-3 rounded-xl px-3 py-3 text-left transition-all hover:bg-gray-50"
+                        >
+                          <span
+                            className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: item.read ? '#E5E7EB' : '#0064D2' }}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-black text-gray-900">{item.title}</span>
+                            <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-gray-500">{item.message}</span>
+                            <span className="mt-1 block text-[11px] font-semibold text-gray-400">{notificationTime(item.createdAt)}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -268,6 +415,7 @@ export function Header() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </>
               ) : (
                 <div className="hidden lg:flex items-center gap-2">
                   <Link to="/login">

@@ -30,6 +30,9 @@ public class TourMessageService {
     @Autowired
     private ProviderRepository providerRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public List<TourMessageDTO> getMessagesByTour(String tourId) {
         return messageRepository.findByTourIdOrderBySentAtAsc(tourId)
                 .stream()
@@ -57,7 +60,9 @@ public class TourMessageService {
         msg.setSenderName(senderName != null ? senderName : sender.getName());
         msg.setSenderRole(TourMessage.SenderRole.valueOf(senderRole.toLowerCase()));
 
-        return toDto(messageRepository.save(msg));
+        TourMessage saved = messageRepository.save(msg);
+        notifyMessageRecipient(tour, saved);
+        return toDto(saved);
     }
 
     public TourMessageDTO sendMessage(
@@ -94,6 +99,36 @@ public class TourMessageService {
                 .orElse(false);
         if (!ownsTour) {
             throw new RuntimeException("You do not have permission to access messages for this tour");
+        }
+    }
+
+    private void notifyMessageRecipient(Tour tour, TourMessage message) {
+        String tourName = tour.getNameVi() != null ? tour.getNameVi() : "Tour";
+        String preview = message.getMessage() == null || message.getMessage().isBlank()
+                ? "Bạn có tin nhắn mới"
+                : message.getMessage().trim();
+        if (preview.length() > 120) {
+            preview = preview.substring(0, 120) + "...";
+        }
+
+        if (message.getSenderRole() == TourMessage.SenderRole.admin) {
+            User providerUser = tour.getProvider() != null ? tour.getProvider().getUser() : null;
+            notificationService.notifyUser(
+                    providerUser,
+                    "tour_message",
+                    "Tin nhắn mới từ Admin",
+                    tourName + ": " + preview,
+                    "/provider/feedback",
+                    "{\"tourId\":\"" + tour.getId() + "\",\"messageId\":\"" + message.getId() + "\"}"
+            );
+        } else {
+            notificationService.notifyAdmins(
+                    "tour_message",
+                    "Tin nhắn mới từ nhà cung cấp",
+                    tourName + ": " + preview,
+                    "/admin/messages",
+                    "{\"tourId\":\"" + tour.getId() + "\",\"messageId\":\"" + message.getId() + "\"}"
+            );
         }
     }
 }

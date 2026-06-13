@@ -63,6 +63,9 @@ public class TourService {
     @Autowired
     private FavoriteRepository favoriteRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public List<TourDTO> getAllApprovedTours() {
         return tourRepository.findByStatus(Tour.TourStatus.approved)
                 .stream()
@@ -203,7 +206,15 @@ public class TourService {
             tour.setDestination(dest);
         }
 
-        return DtoMapper.toTourDTO(tourRepository.save(tour));
+        Tour saved = tourRepository.save(tour);
+        notificationService.notifyAdmins(
+                "admin_pending_tour",
+                "Tour mới chờ duyệt",
+                provider.getCompanyName() + " vừa gửi tour " + saved.getNameVi() + " để duyệt.",
+                "/admin/tours",
+                "{\"tourId\":\"" + saved.getId() + "\"}"
+        );
+        return DtoMapper.toTourDTO(saved);
     }
 
     public TourDTO updateTour(String tourId, TourDTO tourDTO) {
@@ -249,7 +260,17 @@ public class TourService {
         if (tourDTO.getDestinationId() != null) {
             destinationRepository.findById(tourDTO.getDestinationId()).ifPresent(tour::setDestination);
         }
-        return DtoMapper.toTourDTO(tourRepository.save(tour));
+        Tour saved = tourRepository.save(tour);
+        if (!isAdmin && (saved.getStatus() == Tour.TourStatus.pending || saved.getStatus() == Tour.TourStatus.updated)) {
+            notificationService.notifyAdmins(
+                    "admin_pending_tour",
+                    "Tour cần duyệt lại",
+                    saved.getProvider().getCompanyName() + " vừa cập nhật tour " + saved.getNameVi() + ".",
+                    "/admin/tours",
+                    "{\"tourId\":\"" + saved.getId() + "\"}"
+            );
+        }
+        return DtoMapper.toTourDTO(saved);
     }
 
     public void deleteTour(String id) {
@@ -542,3 +563,4 @@ public class TourService {
         return value != null && !value.isBlank();
     }
 }
+

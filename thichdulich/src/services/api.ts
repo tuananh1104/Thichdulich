@@ -410,6 +410,27 @@ class ApiClient {
     return response.data.data;
   }
 
+  // ============ NOTIFICATION ENDPOINTS ============
+  async getNotifications(limit = 10) {
+    const response = await this.client.get('/api/notifications', { params: { limit } });
+    return response.data.data;
+  }
+
+  async getNotificationUnreadCount() {
+    const response = await this.client.get('/api/notifications/unread-count');
+    return response.data.data?.count || 0;
+  }
+
+  async markNotificationRead(id: string) {
+    const response = await this.client.post(`/api/notifications/${id}/read`);
+    return response.data.data;
+  }
+
+  async markAllNotificationsRead() {
+    const response = await this.client.post('/api/notifications/read-all');
+    return response.data;
+  }
+
   // ============ AI CHAT ENDPOINTS ============
   async sendChatMessage(message: string, language: string, context?: string, sessionId?: string) {
     const response = await this.client.post('/api/ai/chat', { message, language, context, sessionId });

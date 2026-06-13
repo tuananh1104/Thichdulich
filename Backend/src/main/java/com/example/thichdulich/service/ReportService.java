@@ -38,6 +38,9 @@ public class ReportService {
     @Autowired
     private ProviderRepository providerRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TourReportDTO createReport(String userId, TourReportDTO reportDTO) {
@@ -83,7 +86,15 @@ public class ReportService {
         }
         report.setStatus(TourReport.ReportStatus.pending);
 
-        return DtoMapper.toReportDTO(reportRepository.save(report));
+        TourReport saved = reportRepository.save(report);
+        notificationService.notifyAdmins(
+                "admin_new_report",
+                "Báo cáo vi phạm mới",
+                user.getName() + " vừa báo cáo tour " + tour.getNameVi() + ".",
+                "/admin/reports",
+                "{\"reportId\":\"" + saved.getId() + "\",\"tourId\":\"" + tour.getId() + "\"}"
+        );
+        return DtoMapper.toReportDTO(saved);
     }
 
     public List<TourReportDTO> getTourReports(String tourId) {
