@@ -449,6 +449,10 @@ export function AdminPage() {
   const [reviews, setReviews] = useState<TourReview[]>([]);
   const [reports, setReports] = useState<TourReport[]>([]);
   const [contacts, setContacts] = useState<ContactMessage[]>([]);
+  const [contactPage, setContactPage] = useState(1);
+  const [contactTotalPages, setContactTotalPages] = useState(1);
+  const [contactTotalElements, setContactTotalElements] = useState(0);
+  const [contactStats, setContactStats] = useState({ all: 0, new: 0, replied: 0, resolved: 0 });
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [adminProviders, setAdminProviders] = useState<Provider[]>([]);
   const [adminStats, setAdminStats] = useState<any>(emptySystemStats);
@@ -656,11 +660,32 @@ export function AdminPage() {
     api.getAdminTourCategories()
       .then(data => setTourCategories((data || []).map(toAdminTourCategory)))
       .catch(error => showAdminError('Không thể tải loại hình tour', error, 'Vui lòng thử lại sau.'));
-
-    api.getContactMessages()
-      .then(data => setContacts((data || []).map(toAdminContact)))
-      .catch(error => showAdminError('Không thể tải liên hệ', error, 'Vui lòng thử lại sau.'));
   }, [user?.role]);
+
+  useEffect(() => {
+    if (user?.role !== 'admin') {
+      return;
+    }
+
+    api.getContactMessages({
+      page: contactPage - 1,
+      size: ADMIN_PAGE_SIZE,
+      status: supportFilter,
+      search: supportSearch.trim(),
+    })
+      .then(data => {
+        setContacts((data?.content || []).map(toAdminContact));
+        setContactTotalPages(Math.max(1, data?.totalPages || 1));
+        setContactTotalElements(data?.totalElements || 0);
+        setContactStats({
+          all: data?.allCount || 0,
+          new: data?.newCount || 0,
+          replied: data?.repliedCount || 0,
+          resolved: data?.resolvedCount || 0,
+        });
+      })
+      .catch(error => showAdminError('Không thể tải liên hệ', error, 'Vui lòng thử lại sau.'));
+  }, [user?.role, contactPage, supportFilter, supportSearch]);
 
   useEffect(() => {
     if (user?.role !== 'admin' || tours.length === 0) return;
@@ -862,12 +887,20 @@ export function AdminPage() {
   }, [reportSearch, reportFilter]);
 
   useEffect(() => {
+    setContactPage(1);
+  }, [supportSearch, supportFilter]);
+
+  useEffect(() => {
     setReviewPage(page => Math.min(page, reviewPageCount));
   }, [reviewPageCount]);
 
   useEffect(() => {
     setReportPage(page => Math.min(page, reportPageCount));
   }, [reportPageCount]);
+
+  useEffect(() => {
+    setContactPage(page => Math.min(page, contactTotalPages));
+  }, [contactTotalPages]);
 
   const adminConversations: ChatConversation[] = useMemo(() => tours.map(tour => ({
       tourId: tour.id,
@@ -896,7 +929,7 @@ export function AdminPage() {
 
   // Count badges
   const pendingReportsCount = reports.filter(r => r.status === 'pending').length;
-  const newContactsCount = contacts.filter(c => c.status === 'new').length;
+  const newContactsCount = contactStats.new;
 
   // Badge map: NavKey -> số hiển thị trên nav
   const badgeMap: Partial<Record<NavKey, number>> = {};
@@ -1202,11 +1235,16 @@ export function AdminPage() {
     api.replyContactMessage(contact.id, reply)
       .then(updated => {
         setContacts(prev => prev.map(item => item.id === contact.id ? toAdminContact(updated) : item));
+        setContactStats(prev => ({
+          ...prev,
+          new: contact.status === 'new' ? Math.max(0, prev.new - 1) : prev.new,
+          replied: contact.status === 'new' ? prev.replied + 1 : prev.replied,
+        }));
         setContactReplyModal({ open: false, contact: null, message: '', submitting: false });
         setSuccessModal({
           isOpen: true,
-          title: 'Đã lưu phản hồi',
-          message: `Yêu cầu của ${contact.name} đã được cập nhật trạng thái đã trả lời.`,
+          title: 'Đã gửi phản hồi',
+          message: `Email phản hồi đã được gửi tới ${contact.email}.`,
         });
       })
       .catch(error => {
@@ -1217,7 +1255,15 @@ export function AdminPage() {
 
   const handleResolveContact = (contact: ContactMessage) => {
     api.resolveContactMessage(contact.id)
-      .then(updated => setContacts(prev => prev.map(item => item.id === contact.id ? toAdminContact(updated) : item)))
+      .then(updated => {
+        setContacts(prev => prev.map(item => item.id === contact.id ? toAdminContact(updated) : item));
+        setContactStats(prev => ({
+          ...prev,
+          new: contact.status === 'new' ? Math.max(0, prev.new - 1) : prev.new,
+          replied: contact.status === 'replied' ? Math.max(0, prev.replied - 1) : prev.replied,
+          resolved: prev.resolved + 1,
+        }));
+      })
       .catch(error => showAdminError('Không thể xử lý liên hệ', error, 'Vui lòng thử lại sau.'));
   };
 
@@ -3575,12 +3621,7 @@ export function AdminPage() {
                   replied: { label: 'Đã trả lời', color: '#0064D2', bg: '#F0F7FF', ring: '#DBEAFE' },
                   resolved: { label: 'Đã giải quyết', color: '#059669', bg: '#ECFDF5', ring: '#D1FAE5' },
                 };
-                const counts = {
-                  all: contacts.length,
-                  new: contacts.filter(c => c.status === 'new').length,
-                  replied: contacts.filter(c => c.status === 'replied').length,
-                  resolved: contacts.filter(c => c.status === 'resolved').length,
-                };
+                const counts = contactStats;
                 const stats = [
                   { label: 'Cần phản hồi', value: counts.new, icon: AlertTriangle, color: '#DC2626', bg: '#FEF2F2' },
                   { label: 'Đang theo dõi', value: counts.replied, icon: Clock, color: '#0064D2', bg: '#EFF6FF' },
@@ -3713,6 +3754,22 @@ export function AdminPage() {
                           );
                         })
                       )}
+                      <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs font-semibold text-gray-500">
+                          Hiển thị {filteredContacts.length} / {contactTotalElements} liên hệ phù hợp · Mỗi trang {ADMIN_PAGE_SIZE}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-600">
+                            Trang {contactPage}/{contactTotalPages}
+                          </span>
+                          <button type="button" onClick={() => setContactPage(page => Math.max(1, page - 1))} disabled={contactPage <= 1} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
+                            Trước
+                          </button>
+                          <button type="button" onClick={() => setContactPage(page => Math.min(contactTotalPages, page + 1))} disabled={contactPage >= contactTotalPages} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
+                            Sau
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </>
                 );
@@ -4822,7 +4879,7 @@ export function AdminPage() {
                 style={{ background: '#0064D2' }}
               >
                 <Send className="h-4 w-4" />
-                {contactReplyModal.submitting ? 'Đang lưu...' : 'Lưu phản hồi'}
+                {contactReplyModal.submitting ? 'Đang gửi...' : 'Gửi phản hồi'}
               </button>
             </div>
           </div>

@@ -395,8 +395,8 @@ class ApiClient {
     return response.data;
   }
 
-  async getContactMessages() {
-    const response = await this.client.get('/api/contact');
+  async getContactMessages(params?: { page?: number; size?: number; status?: string; search?: string }) {
+    const response = await this.client.get('/api/contact/page', { params });
     return response.data.data;
   }
 

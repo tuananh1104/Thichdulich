@@ -2,7 +2,10 @@ package com.example.thichdulich.controller;
 
 import com.example.thichdulich.dto.ApiResponse;
 import com.example.thichdulich.dto.ContactMessageDTO;
+import com.example.thichdulich.dto.ContactMessagePageDTO;
+import com.example.thichdulich.service.ContactRateLimitService;
 import com.example.thichdulich.service.ContactService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,16 +21,39 @@ public class ContactController {
     @Autowired
     private ContactService contactService;
 
+    @Autowired
+    private ContactRateLimitService contactRateLimitService;
+
     @PostMapping
     public ResponseEntity<ApiResponse<ContactMessageDTO>> sendMessage(
-            @Valid @RequestBody ContactMessageDTO messageDTO) {
+            @Valid @RequestBody ContactMessageDTO messageDTO,
+            HttpServletRequest request) {
         try {
-            ContactMessageDTO sent = contactService.sendMessage(messageDTO);
+            if (!contactRateLimitService.allow(clientIp(request))) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(ApiResponse.error("Bạn gửi liên hệ quá nhanh. Vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS.value()));
+            }
+            ContactMessageDTO sent = contactService.sendMessage(messageDTO, currentUserIdOrNull());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success(sent, "Message sent successfully"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+        }
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<ApiResponse<ContactMessagePageDTO>> getMessagesPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "all") String status,
+            @RequestParam(required = false, defaultValue = "") String search) {
+        try {
+            ContactMessagePageDTO messages = contactService.getMessagesPage(page, size, status, search);
+            return ResponseEntity.ok(ApiResponse.success(messages));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
     }
 
@@ -59,10 +85,10 @@ public class ContactController {
             @RequestParam String reply,
             @RequestParam(required = false, defaultValue = "Admin") String repliedBy) {
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String repliedById = auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())
-                    ? auth.getPrincipal().toString()
-                    : repliedBy;
+            String repliedById = currentUserIdOrNull();
+            if (repliedById == null) {
+                repliedById = repliedBy;
+            }
             ContactMessageDTO replied = contactService.replyToMessage(id, reply, repliedById);
             return ResponseEntity.ok(ApiResponse.success(replied, "Reply sent successfully"));
         } catch (Exception e) {
@@ -80,5 +106,25 @@ public class ContactController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
         }
+    }
+
+    private String currentUserIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
+        return auth.getPrincipal().toString();
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 }
