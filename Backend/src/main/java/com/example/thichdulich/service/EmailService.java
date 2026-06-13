@@ -101,20 +101,15 @@ public class EmailService {
     public void sendContactReply(String email, String name, String originalSubject, String originalMessage, String replyMessage) {
         requireResendConfigured();
 
-        String displayName = name == null || name.isBlank() ? "ban" : name.trim();
         String safeSubject = sanitizeSubject(originalSubject);
         String html = """
                 <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-                  <h2>Phan hoi tu Thich Du Lich</h2>
-                  <p>Xin chao %s,</p>
-                  <p>Cam on ban da lien he voi Thich Du Lich. Chung toi xin phan hoi yeu cau cua ban nhu sau:</p>
+                  <h2>Phản hồi từ Thích Du Lịch</h2>
                   <div style="margin:18px 0;padding:16px;border-left:4px solid #0064D2;background:#F3F8FF;white-space:pre-wrap">%s</div>
-                  <p><strong>Yeu cau ban da gui:</strong> %s</p>
+                  <p style="margin-top:24px"><strong>Yêu cầu bạn đã gửi:</strong> %s</p>
                   <div style="margin:12px 0;padding:14px;background:#F9FAFB;border:1px solid #E5E7EB;white-space:pre-wrap">%s</div>
-                  <p>Tran trong,<br/>Bo phan ho tro khach hang Thich Du Lich</p>
                 </div>
                 """.formatted(
-                escapeHtml(displayName),
                 escapeHtml(replyMessage),
                 escapeHtml(safeSubject),
                 escapeHtml(originalMessage)
@@ -122,7 +117,7 @@ public class EmailService {
 
         sendRequiredEmail(
                 email,
-                "Phan hoi tu Thich Du Lich: " + safeSubject,
+                "Phản hồi từ Thích Du Lịch: " + safeSubject,
                 html,
                 "contact reply"
         );
@@ -159,7 +154,7 @@ public class EmailService {
 
     private String sanitizeSubject(String subject) {
         if (subject == null || subject.isBlank()) {
-            return "Yeu cau lien he";
+            return "Yêu cầu liên hệ";
         }
         String cleaned = subject.replace('\r', ' ').replace('\n', ' ').trim();
         return cleaned.length() > 140 ? cleaned.substring(0, 140) : cleaned;
