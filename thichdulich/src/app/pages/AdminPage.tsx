@@ -84,6 +84,8 @@ const emptySystemStats = {
   averageRating: 0,
 };
 
+const ADMIN_PAGE_SIZE = 10;
+
 type NavKey = 'overview' | 'approve' | 'bookings' | 'users' | 'providers' | 'reviews' | 'messages' | 'reports' | 'support' | 'analytics' | 'destinations';
 
 type NavItem = { key: NavKey; label: string; icon: React.ElementType; badge?: number };
@@ -433,7 +435,15 @@ export function AdminPage() {
   const [selectedProviderDetail, setSelectedProviderDetail] = useState<Provider | null>(null);
   const [selectedReviewTour, setSelectedReviewTour] = useState<string>('all');
   const [reviewTourSearch, setReviewTourSearch] = useState('');
+  const [reviewSearch, setReviewSearch] = useState('');
+  const [reviewRatingFilter, setReviewRatingFilter] = useState<'all' | '5' | '4' | 'low'>('all');
+  const [reviewResponseFilter, setReviewResponseFilter] = useState<'all' | 'unanswered' | 'requested' | 'answered'>('all');
+  const [reviewPage, setReviewPage] = useState(1);
+  const [selectedReviewDetail, setSelectedReviewDetail] = useState<TourReview | null>(null);
   const [selectedReportTour, setSelectedReportTour] = useState<string>('all');
+  const [reportSearch, setReportSearch] = useState('');
+  const [reportPage, setReportPage] = useState(1);
+  const [selectedReportDetail, setSelectedReportDetail] = useState<TourReport | null>(null);
   const [tourMessages, setTourMessages] = useState<Record<string, ChatConversation['messages']>>({});
   const [unreadTourMessages, setUnreadTourMessages] = useState(0);
   const [reviews, setReviews] = useState<TourReview[]>([]);
@@ -713,7 +723,66 @@ export function AdminPage() {
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   const refundPendingBookings = bookings.filter(b => b.refundStatus === 'refund_pending');
   const payoutPendingBookings = bookings.filter(b => b.payoutStatus === 'payout_pending');
-  const filteredReports = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter);
+  const filteredReviewItems = reviews
+    .filter(review => {
+      const tour = tours.find(item => item.id === review.tourId);
+      const keyword = reviewSearch.trim().toLowerCase();
+      const matchesKeyword = !keyword || [
+        review.userName,
+        review.tourName,
+        review.comment,
+        tour?.name.vi || '',
+        tour?.providerName || '',
+        tour?.location || '',
+      ].some(value => value.toLowerCase().includes(keyword));
+      const matchesRating =
+        reviewRatingFilter === 'all'
+        || (reviewRatingFilter === 'low' ? review.rating <= 2 : review.rating === Number(reviewRatingFilter));
+      const matchesResponse =
+        reviewResponseFilter === 'all'
+        || (reviewResponseFilter === 'answered' && Boolean(review.response))
+        || (reviewResponseFilter === 'unanswered' && !review.response)
+        || (reviewResponseFilter === 'requested' && !review.response && Boolean(review.responseRequested));
+      return matchesKeyword && matchesRating && matchesResponse;
+    })
+    .slice()
+    .sort((a, b) => {
+      const aPriority = !a.response && a.responseRequested ? 0 : !a.response ? 1 : 2;
+      const bPriority = !b.response && b.responseRequested ? 0 : !b.response ? 1 : 2;
+      return aPriority - bPriority || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  const reviewPageCount = Math.max(1, Math.ceil(filteredReviewItems.length / ADMIN_PAGE_SIZE));
+  const paginatedReviews = filteredReviewItems.slice((reviewPage - 1) * ADMIN_PAGE_SIZE, reviewPage * ADMIN_PAGE_SIZE);
+  const selectedReviewDetailTour = selectedReviewDetail
+    ? tours.find(tour => tour.id === selectedReviewDetail.tourId)
+    : null;
+
+  const filteredReports = reports
+    .filter(report => reportFilter === 'all' || report.status === reportFilter)
+    .filter(report => {
+      const tour = tours.find(item => item.id === report.tourId);
+      const keyword = reportSearch.trim().toLowerCase();
+      if (!keyword) return true;
+      return [
+        report.tourName,
+        report.reporterName,
+        report.reason,
+        report.description,
+        report.adminNote || '',
+        tour?.providerName || '',
+        tour?.location || '',
+      ].some(value => value.toLowerCase().includes(keyword));
+    })
+    .slice()
+    .sort((a, b) => {
+      const statusOrder = { pending: 0, reviewed: 1, resolved: 2, dismissed: 3 } as Record<TourReport['status'], number>;
+      return statusOrder[a.status] - statusOrder[b.status] || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  const reportPageCount = Math.max(1, Math.ceil(filteredReports.length / ADMIN_PAGE_SIZE));
+  const paginatedReports = filteredReports.slice((reportPage - 1) * ADMIN_PAGE_SIZE, reportPage * ADMIN_PAGE_SIZE);
+  const selectedReportDetailTour = selectedReportDetail
+    ? tours.find(tour => tour.id === selectedReportDetail.tourId)
+    : null;
   const filteredContacts = contacts
     .filter(contact => supportFilter === 'all' || contact.status === supportFilter)
     .filter(contact => {
@@ -783,6 +852,22 @@ export function AdminPage() {
       return statusOrder[a.status] - statusOrder[b.status] || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     })
     : [];
+
+  useEffect(() => {
+    setReviewPage(1);
+  }, [reviewSearch, reviewRatingFilter, reviewResponseFilter]);
+
+  useEffect(() => {
+    setReportPage(1);
+  }, [reportSearch, reportFilter]);
+
+  useEffect(() => {
+    setReviewPage(page => Math.min(page, reviewPageCount));
+  }, [reviewPageCount]);
+
+  useEffect(() => {
+    setReportPage(page => Math.min(page, reportPageCount));
+  }, [reportPageCount]);
 
   const adminConversations: ChatConversation[] = useMemo(() => tours.map(tour => ({
       tourId: tour.id,
@@ -2412,6 +2497,205 @@ export function AdminPage() {
                 </div>
               </div>
 
+              <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_170px_210px]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      value={reviewSearch}
+                      onChange={event => setReviewSearch(event.target.value)}
+                      placeholder="Tìm khách, tour, provider, nội dung đánh giá..."
+                      className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm font-semibold text-gray-700 outline-none transition-all focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                  <select
+                    value={reviewRatingFilter}
+                    onChange={event => setReviewRatingFilter(event.target.value as typeof reviewRatingFilter)}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="all">Tất cả sao</option>
+                    <option value="5">5 sao</option>
+                    <option value="4">4 sao</option>
+                    <option value="low">1-2 sao</option>
+                  </select>
+                  <select
+                    value={reviewResponseFilter}
+                    onChange={event => setReviewResponseFilter(event.target.value as typeof reviewResponseFilter)}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="all">Tất cả phản hồi</option>
+                    <option value="unanswered">Chưa phản hồi</option>
+                    <option value="requested">Admin đã yêu cầu</option>
+                    <option value="answered">Đã phản hồi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
+                  <div>
+                    <p className="text-base font-black text-gray-900">Danh sách đánh giá</p>
+                    <p className="mt-0.5 text-xs text-gray-500">Hiển thị {paginatedReviews.length} / {filteredReviewItems.length} đánh giá phù hợp</p>
+                  </div>
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-600">
+                    Trang {reviewPage}/{reviewPageCount}
+                  </span>
+                </div>
+
+                {filteredReviewItems.length === 0 ? (
+                  <div className="p-16 text-center">
+                    <Star className="mx-auto mb-4 h-16 w-16 text-gray-200" />
+                    <p className="text-lg font-bold text-gray-600">Không có đánh giá phù hợp</p>
+                    <p className="mt-1 text-sm text-gray-400">Thử đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {paginatedReviews.map(review => {
+                      const tour = tours.find(item => item.id === review.tourId);
+                      const status = review.response
+                        ? { label: 'Đã phản hồi', bg: '#ECFDF5', color: '#059669' }
+                        : review.responseRequested
+                          ? { label: 'Đã yêu cầu', bg: '#FFFBEB', color: '#D97706' }
+                          : { label: 'Chưa phản hồi', bg: '#F3F4F6', color: '#6B7280' };
+                      return (
+                        <button
+                          key={review.id}
+                          type="button"
+                          onClick={() => setSelectedReviewDetail(review)}
+                          className="grid w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_140px_120px]"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black text-white" style={{ background: '#0064D2' }}>
+                                {review.userName.split(' ').slice(-1)[0]?.[0] || 'K'}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-gray-900">{review.userName || 'Khách hàng'}</p>
+                                <div className="mt-1 flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="h-3.5 w-3.5" fill={i < review.rating ? '#F59E0B' : 'none'} style={{ color: i < review.rating ? '#F59E0B' : '#D1D5DB' }} />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{review.comment || 'Không có nội dung đánh giá.'}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-gray-900">{tour?.name.vi || review.tourName || 'Tour không xác định'}</p>
+                            <p className="mt-1 truncate text-xs text-gray-500">{tour?.providerName || 'Nhà cung cấp'}</p>
+                            <p className="mt-1 truncate text-xs text-gray-400">{tour?.location || ''}</p>
+                          </div>
+                          <div className="flex items-start xl:justify-center">
+                            <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: status.bg, color: status.color }}>
+                              {status.label}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500 xl:text-right">
+                            <p className="font-bold text-gray-700">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
+                            <p className="mt-1 text-xs">{review.helpful} hữu ích</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-semibold text-gray-500">Mỗi trang {ADMIN_PAGE_SIZE} đánh giá</p>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setReviewPage(page => Math.max(1, page - 1))} disabled={reviewPage <= 1} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
+                      Trước
+                    </button>
+                    <button type="button" onClick={() => setReviewPage(page => Math.min(reviewPageCount, page + 1))} disabled={reviewPage >= reviewPageCount} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {selectedReviewDetail && (
+                <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={() => setSelectedReviewDetail(null)}>
+                  <div className="flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl" onClick={event => event.stopPropagation()}>
+                    <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
+                      <div>
+                        <p className="text-lg font-black text-gray-950">Chi tiết đánh giá</p>
+                        <p className="mt-1 text-sm text-gray-500">{selectedReviewDetailTour?.name.vi || selectedReviewDetail.tourName}</p>
+                      </div>
+                      <button onClick={() => setSelectedReviewDetail(null)} className="rounded-xl p-2 hover:bg-gray-100">
+                        <X className="h-5 w-5 text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                      <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-black text-gray-900">{selectedReviewDetail.userName || 'Khách hàng'}</p>
+                            <p className="mt-1 text-xs text-gray-500">{new Date(selectedReviewDetail.createdAt).toLocaleString('vi-VN')}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className="h-4 w-4" fill={i < selectedReviewDetail.rating ? '#F59E0B' : 'none'} style={{ color: i < selectedReviewDetail.rating ? '#F59E0B' : '#D1D5DB' }} />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-gray-700">{selectedReviewDetail.comment || 'Không có nội dung đánh giá.'}</p>
+                      </div>
+
+                      {selectedReviewDetail.images && selectedReviewDetail.images.length > 0 && (
+                        <div>
+                          <p className="mb-3 text-xs font-black uppercase text-gray-500">Ảnh đánh giá</p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {selectedReviewDetail.images.map((image, index) => (
+                              <a key={index} href={image} target="_blank" rel="noreferrer" className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                                <img src={image} alt={`Review ${index + 1}`} className="h-28 w-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedReviewDetail.response ? (
+                        <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5">
+                          <p className="text-xs font-black uppercase text-purple-700">Phản hồi nhà cung cấp</p>
+                          <p className="mt-2 text-sm leading-7 text-gray-700">{selectedReviewDetail.response.message}</p>
+                          <p className="mt-3 text-xs text-gray-500">{selectedReviewDetail.response.from} · {new Date(selectedReviewDetail.response.createdAt).toLocaleString('vi-VN')}</p>
+                        </div>
+                      ) : selectedReviewDetail.responseRequested ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-700">
+                          Đã yêu cầu nhà cung cấp phản hồi
+                          {selectedReviewDetail.responseRequestedAt ? ` · ${new Date(selectedReviewDetail.responseRequestedAt).toLocaleString('vi-VN')}` : ''}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row">
+                      {!selectedReviewDetail.response && (
+                        <button onClick={() => handleRequestProviderReviewResponse(selectedReviewDetail)} disabled={selectedReviewDetail.responseRequested} className="flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all hover:opacity-90" style={{ background: selectedReviewDetail.responseRequested ? '#F3F4F6' : '#F5F3FF', color: selectedReviewDetail.responseRequested ? '#9CA3AF' : '#7C3AED' }}>
+                          <MessageSquare className="h-4 w-4" />
+                          {selectedReviewDetail.responseRequested ? 'Đã yêu cầu phản hồi' : 'Yêu cầu Provider phản hồi'}
+                        </button>
+                      )}
+                      <button onClick={() => {
+                        setConfirmModal({
+                          isOpen: true,
+                          title: 'Xóa đánh giá',
+                          message: `Bạn chắc chắn muốn xóa đánh giá của ${selectedReviewDetail.userName}? Thao tác này không thể hoàn tác.`,
+                          variant: 'danger',
+                          onConfirm: () => {
+                            handleDeleteReview(selectedReviewDetail);
+                            setSelectedReviewDetail(null);
+                            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                          },
+                        });
+                      }} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                        Xóa đánh giá
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="hidden">
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
                 <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm xl:sticky xl:top-5 xl:self-start">
                   <div className="border-b border-gray-100 p-5">
@@ -2648,7 +2932,8 @@ export function AdminPage() {
                   ))
                 )}
               </div>
-            </div>
+              </div>
+              </div>
             </div>
           )}
           {activeNav === 'messages' && (() => {
@@ -2716,6 +3001,171 @@ export function AdminPage() {
                 </div>
               </div>
 
+              <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={reportSearch}
+                    onChange={event => setReportSearch(event.target.value)}
+                    placeholder="Tìm tour, provider, người báo cáo, lý do hoặc nội dung..."
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm font-semibold text-gray-700 outline-none transition-all focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
+                  <div>
+                    <p className="text-base font-black text-gray-900">Danh sách báo cáo</p>
+                    <p className="mt-0.5 text-xs text-gray-500">Hiển thị {paginatedReports.length} / {filteredReports.length} báo cáo phù hợp</p>
+                  </div>
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-600">
+                    Trang {reportPage}/{reportPageCount}
+                  </span>
+                </div>
+
+                {filteredReports.length === 0 ? (
+                  <div className="p-16 text-center">
+                    <Flag className="mx-auto mb-4 h-16 w-16 text-gray-200" />
+                    <p className="text-lg font-bold text-gray-600">Không có báo cáo phù hợp</p>
+                    <p className="mt-1 text-sm text-gray-400">Thử đổi trạng thái hoặc từ khóa tìm kiếm.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {paginatedReports.map(report => {
+                      const tour = tours.find(item => item.id === report.tourId);
+                      const st = reportStatusMap[report.status] || reportStatusMap.pending;
+                      return (
+                        <button
+                          key={report.id}
+                          type="button"
+                          onClick={() => setSelectedReportDetail(report)}
+                          className="grid w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 xl:grid-cols-[150px_minmax(0,1.25fr)_minmax(0,1fr)_140px_120px]"
+                        >
+                          <div>
+                            <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: st.bg, color: st.color }}>
+                              {st.label}
+                            </span>
+                            <p className="mt-2 text-xs font-semibold text-gray-400">#{report.id.slice(0, 8)}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-black text-gray-900">{tour?.name.vi || report.tourName || 'Tour không xác định'}</p>
+                            <p className="mt-1 truncate text-xs text-gray-500">{tour?.providerName || 'Nhà cung cấp'}</p>
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{report.description || 'Không có mô tả chi tiết.'}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-black uppercase text-gray-400">Lý do</p>
+                            <p className="mt-1 line-clamp-2 text-sm font-bold text-red-700">{report.reason}</p>
+                            <p className="mt-2 truncate text-xs text-gray-500">{report.reporterName || 'Khách hàng'}</p>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            <p className="font-bold text-gray-700">{new Date(report.createdAt).toLocaleDateString('vi-VN')}</p>
+                            <p className="mt-1 text-xs">{report.images?.length || 0} ảnh</p>
+                          </div>
+                          <div className="flex items-start xl:justify-end">
+                            <span className="rounded-xl border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700">
+                              Xem xử lý
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-semibold text-gray-500">Mỗi trang {ADMIN_PAGE_SIZE} báo cáo</p>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setReportPage(page => Math.max(1, page - 1))} disabled={reportPage <= 1} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
+                      Trước
+                    </button>
+                    <button type="button" onClick={() => setReportPage(page => Math.min(reportPageCount, page + 1))} disabled={reportPage >= reportPageCount} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 disabled:cursor-not-allowed disabled:opacity-40">
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {selectedReportDetail && (
+                <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={() => setSelectedReportDetail(null)}>
+                  <div className="flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl" onClick={event => event.stopPropagation()}>
+                    <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
+                      <div>
+                        <p className="text-lg font-black text-gray-950">Chi tiết báo cáo</p>
+                        <p className="mt-1 text-sm text-gray-500">{selectedReportDetailTour?.name.vi || selectedReportDetail.tourName}</p>
+                      </div>
+                      <button onClick={() => setSelectedReportDetail(null)} className="rounded-xl p-2 hover:bg-gray-100">
+                        <X className="h-5 w-5 text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                      {(() => {
+                        const st = reportStatusMap[selectedReportDetail.status] || reportStatusMap.pending;
+                        return (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                            <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">{selectedReportDetail.reason}</span>
+                            <span className="text-xs text-gray-400">{new Date(selectedReportDetail.createdAt).toLocaleString('vi-VN')}</span>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5">
+                        <p className="text-xs font-black uppercase text-gray-500">Người báo cáo</p>
+                        <p className="mt-1 text-sm font-black text-gray-900">{selectedReportDetail.reporterName || 'Khách hàng'}</p>
+                        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-gray-700">{selectedReportDetail.description || 'Không có mô tả chi tiết.'}</p>
+                      </div>
+
+                      {selectedReportDetail.images && selectedReportDetail.images.length > 0 && (
+                        <div>
+                          <p className="mb-3 text-xs font-black uppercase text-gray-500">Bằng chứng ảnh</p>
+                          <div className="grid grid-cols-3 gap-3">
+                            {selectedReportDetail.images.map((image, index) => (
+                              <a key={index} href={image} target="_blank" rel="noreferrer" className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                                <img src={image} alt={`Bằng chứng ${index + 1}`} className="h-32 w-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedReportDetail.adminNote && (
+                        <div className="rounded-2xl border border-purple-100 bg-purple-50 p-5">
+                          <p className="text-xs font-black uppercase text-purple-700">Ghi chú xử lý</p>
+                          <p className="mt-2 text-sm leading-7 text-gray-700">{selectedReportDetail.adminNote}</p>
+                          <p className="mt-3 text-xs text-gray-500">Bởi {selectedReportDetail.reviewedBy || 'Admin'} · {selectedReportDetail.reviewedAt ? new Date(selectedReportDetail.reviewedAt).toLocaleString('vi-VN') : ''}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid gap-3 border-t border-gray-100 px-6 py-4 sm:grid-cols-2">
+                      {selectedReportDetail.status === 'pending' && (
+                        <button onClick={() => handleReviewReport(selectedReportDetail)} className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold" style={{ background: '#F5F3FF', color: '#7C3AED' }}>
+                          <Check className="h-4 w-4" />
+                          Tiếp nhận báo cáo
+                        </button>
+                      )}
+                      {(selectedReportDetail.status === 'pending' || selectedReportDetail.status === 'reviewed') && (
+                        <>
+                          <button onClick={() => handleWarnProviderReport(selectedReportDetail)} className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold" style={{ background: '#FEF3C7', color: '#B45309' }}>
+                            <AlertTriangle className="h-4 w-4" />
+                            Cảnh báo nhà cung cấp
+                          </button>
+                          <button onClick={() => handleResolveReport(selectedReportDetail)} className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white" style={{ background: '#059669' }}>
+                            <CheckCircle className="h-4 w-4" />
+                            Hoàn tất xử lý
+                          </button>
+                          <button onClick={() => handleDismissReport(selectedReportDetail)} className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50">
+                            <X className="h-4 w-4" />
+                            Bỏ qua báo cáo
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="hidden">
               {filteredReports.length === 0 ? (
                 <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
                   <Flag className="w-20 h-20 mx-auto mb-4" style={{ color: '#E5E7EB' }} />
@@ -2966,6 +3416,7 @@ export function AdminPage() {
                   )}
                 </div>
               )}
+              </div>
             </div>
           )}
 
