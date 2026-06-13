@@ -698,17 +698,30 @@ export function AdminPage() {
 
   useEffect(() => {
     if (user?.role !== 'admin' || tours.length === 0) return;
-    Promise.all(tours.map(tour =>
-      api.getTourMessages(tour.id)
-        .then(data => [tour.id, (data || []).map((message: any) => ({
-          id: message.id,
-          senderRole: (message.senderRole || 'provider').toLowerCase(),
-          senderName: message.senderName || '',
-          message: message.message || '',
-          timestamp: message.sentAt || new Date().toISOString(),
-        }))] as const)
-        .catch(() => [tour.id, []] as const)
-    )).then(entries => setTourMessages(Object.fromEntries(entries)));
+    let isMounted = true;
+    const loadTourMessages = () => {
+      if (document.hidden) return;
+      Promise.all(tours.map(tour =>
+        api.getTourMessages(tour.id)
+          .then(data => [tour.id, (data || []).map((message: any) => ({
+            id: message.id,
+            senderRole: (message.senderRole || 'provider').toLowerCase(),
+            senderName: message.senderName || '',
+            message: message.message || '',
+            timestamp: message.sentAt || new Date().toISOString(),
+          }))] as const)
+          .catch(() => [tour.id, []] as const)
+      )).then(entries => {
+        if (isMounted) setTourMessages(Object.fromEntries(entries));
+      });
+    };
+
+    loadTourMessages();
+    const intervalId = window.setInterval(loadTourMessages, 15000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
   }, [user?.role, tours]);
 
   const providers: Provider[] = adminProviders;
