@@ -2388,32 +2388,41 @@ export function AdminPage() {
           )}
           {activeNav === 'reviews' && (
             <div className="space-y-5">
-              {/* Stats */}
-              <div className="grid grid-cols-4 gap-4">
-                {[
-                  { label: 'Tổng đánh giá', value: reviews.length, color: '#0064D2' },
-                  { label: 'Trung bình sao', value: averageRating.toFixed(1), color: '#F59E0B' },
-                  { label: '5 sao', value: reviews.filter(r => r.rating === 5).length, color: '#059669' },
-                  { label: 'Có phản hồi', value: reviews.filter(r => r.response).length, color: '#7C3AED' },
-                ].map((s, i) => (
-                  <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
-                    <p className="font-bold mb-1" style={{ fontSize: '1.75rem', color: s.color }}>{s.value}</p>
-                    <p className="text-xs text-gray-500">{s.label}</p>
+              <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                        <Star className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xl font-black text-gray-950">Kiểm duyệt đánh giá</p>
+                        <p className="mt-0.5 text-sm text-gray-500">Theo dõi đánh giá theo từng tour và yêu cầu nhà cung cấp phản hồi khi cần.</p>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+                      Điểm TB {averageRating.toFixed(1)}
+                    </span>
+                    <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-black text-purple-700">
+                      {reviews.filter(r => r.response).length} đã phản hồi
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid min-h-0 grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-260px)] xl:max-h-[860px]">
-                <div className="flex min-h-0 flex-col rounded-3xl border border-gray-100 bg-white shadow-sm">
+              <div className="grid min-h-0 grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-220px)] xl:max-h-[900px]">
+                <div className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                   <div className="border-b border-gray-100 p-5">
                     <div className="flex items-center justify-between">
-                    <div>
+                      <div>
                         <p className="text-base font-black text-gray-900">Tour có đánh giá</p>
                         <p className="mt-1 text-xs text-gray-500">Chọn một tour để kiểm duyệt phản hồi</p>
-                    </div>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
-                      {filteredReviewTours.length}/{reviewTours.length}
-                    </span>
+                      </div>
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
+                        {filteredReviewTours.length}/{reviewTours.length}
+                      </span>
                     </div>
                   </div>
 
@@ -2453,6 +2462,7 @@ export function AdminPage() {
                           style={{
                             borderColor: isSelected ? '#0064D2' : '#E5E7EB',
                             background: isSelected ? '#EFF6FF' : '#FFFFFF',
+                            boxShadow: isSelected ? '0 12px 24px rgba(0,100,210,0.12)' : 'none',
                           }}
                         >
                           <div className="flex gap-3">
@@ -2484,36 +2494,36 @@ export function AdminPage() {
                       <div className="grid gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
                         <img src={selectedReviewTourData.image} alt={selectedReviewTourData.name.vi} className="h-56 w-full object-cover lg:h-full" />
                         <div className="min-w-0 p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
+                          <div className="flex items-start gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-4">
+                                <div>
                                   <h3 className="text-2xl font-black leading-tight text-gray-950">{selectedReviewTourData.name.vi}</h3>
-                              <p className="mt-1 text-sm text-gray-500">{selectedReviewTourData.providerName} · {selectedReviewTourData.location}</p>
-                            </div>
-                            <button
-                              onClick={() => setSelectedTourDetail(selectedReviewTourData)}
-                              className="flex items-center gap-1.5 rounded-xl border border-blue-200 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Mở hồ sơ tour
-                            </button>
-                          </div>
-                              <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                            {[
-                              { label: 'Đánh giá', value: filteredReviews.length, color: '#0064D2' },
-                              { label: 'Điểm TB', value: filteredReviews.length ? (filteredReviews.reduce((s, r) => s + r.rating, 0) / filteredReviews.length).toFixed(1) : '0.0', color: '#F59E0B' },
-                              { label: 'Đã phản hồi', value: filteredReviews.filter(r => r.response).length, color: '#059669' },
-                              { label: 'Chờ phản hồi', value: filteredReviews.filter(r => !r.response).length, color: '#D97706' },
-                            ].map((item, index) => (
-                              <div key={index} className="min-w-0 rounded-xl bg-gray-50 p-3 text-center">
-                                <p className="money-text text-sm font-black" style={{ color: item.color }} title={String(item.value)}>{item.value}</p>
-                                <p className="text-xs text-gray-500">{item.label}</p>
+                                  <p className="mt-1 text-sm text-gray-500">{selectedReviewTourData.providerName} · {selectedReviewTourData.location}</p>
+                                </div>
+                                <button
+                                  onClick={() => setSelectedTourDetail(selectedReviewTourData)}
+                                  className="flex items-center gap-1.5 rounded-xl border border-blue-200 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  Mở hồ sơ tour
+                                </button>
                               </div>
-                            ))}
+                              <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                {[
+                                  { label: 'Đánh giá', value: filteredReviews.length, color: '#0064D2' },
+                                  { label: 'Điểm TB', value: filteredReviews.length ? (filteredReviews.reduce((s, r) => s + r.rating, 0) / filteredReviews.length).toFixed(1) : '0.0', color: '#F59E0B' },
+                                  { label: 'Đã phản hồi', value: filteredReviews.filter(r => r.response).length, color: '#059669' },
+                                  { label: 'Chờ phản hồi', value: filteredReviews.filter(r => !r.response).length, color: '#D97706' },
+                                ].map((item, index) => (
+                                  <div key={index} className="min-w-0 rounded-xl bg-gray-50 p-3 text-center">
+                                    <p className="money-text text-sm font-black" style={{ color: item.color }} title={String(item.value)}>{item.value}</p>
+                                    <p className="text-xs text-gray-500">{item.label}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
                         </div>
                       </div>
                     </div>
@@ -2663,40 +2673,47 @@ export function AdminPage() {
           })()}
           {activeNav === 'reports' && (
             <div className="space-y-5">
-              <div className="grid grid-cols-4 gap-4">
-                {[
-                  { label: 'Tổng báo cáo', value: reports.length, color: '#DC2626' },
-                  { label: 'Chờ xử lý', value: reports.filter(r => r.status === 'pending').length, color: '#D97706' },
-                  { label: 'Đã xem xét', value: reports.filter(r => r.status === 'reviewed').length, color: '#7C3AED' },
-                  { label: 'Đã giải quyết', value: reports.filter(r => r.status === 'resolved').length, color: '#059669' },
-                ].map((s, i) => (
-                  <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
-                    <p className="font-bold mb-1" style={{ fontSize: '1.75rem', color: s.color }}>{s.value}</p>
-                    <p className="text-xs text-gray-500">{s.label}</p>
+              <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                      <Flag className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-black text-gray-950">Báo cáo vi phạm</p>
+                      <p className="mt-0.5 text-sm text-gray-500">Tập trung xử lý theo tour, đối chiếu bằng chứng và ghi nhận hành động admin.</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                <div>
-                  <p className="text-sm font-black text-gray-900">Báo cáo theo tour</p>
-                  <p className="mt-0.5 text-xs text-gray-500">Chọn một tour để xem toàn bộ báo cáo, lịch sử xử lý và hành động nghiệp vụ.</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+                      {reports.filter(r => r.status === 'pending').length} chờ xử lý
+                    </span>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                      {reports.filter(r => r.status === 'resolved').length} đã giải quyết
+                    </span>
+                  </div>
                 </div>
-                <select
-                  value={reportFilter}
-                  onChange={(e) => {
-                    setReportFilter(e.target.value as any);
-                    setSelectedReportTour('all');
-                  }}
-                  className="min-w-[220px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2"
-                  style={{ '--tw-ring-color': '#FF6000' } as React.CSSProperties}
-                >
-                  <option value="all">Tất cả trạng thái ({reports.length})</option>
-                  <option value="pending">Chờ xử lý ({reports.filter(r => r.status === 'pending').length})</option>
-                  <option value="reviewed">Đã xem xét ({reports.filter(r => r.status === 'reviewed').length})</option>
-                  <option value="resolved">Đã giải quyết ({reports.filter(r => r.status === 'resolved').length})</option>
-                  <option value="dismissed">Đã bỏ qua ({reports.filter(r => r.status === 'dismissed').length})</option>
-                </select>
+                <div className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-gray-900">Báo cáo theo tour</p>
+                    <p className="mt-0.5 text-xs text-gray-500">Chọn một tour để xem toàn bộ báo cáo, lịch sử xử lý và hành động nghiệp vụ.</p>
+                  </div>
+                  <select
+                    value={reportFilter}
+                    onChange={(e) => {
+                      setReportFilter(e.target.value as any);
+                      setSelectedReportTour('all');
+                    }}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 sm:w-[260px]"
+                    style={{ '--tw-ring-color': '#FF6000' } as React.CSSProperties}
+                  >
+                    <option value="all">Tất cả trạng thái ({reports.length})</option>
+                    <option value="pending">Chờ xử lý ({reports.filter(r => r.status === 'pending').length})</option>
+                    <option value="reviewed">Đã xem xét ({reports.filter(r => r.status === 'reviewed').length})</option>
+                    <option value="resolved">Đã giải quyết ({reports.filter(r => r.status === 'resolved').length})</option>
+                    <option value="dismissed">Đã bỏ qua ({reports.filter(r => r.status === 'dismissed').length})</option>
+                  </select>
+                </div>
               </div>
 
               {filteredReports.length === 0 ? (
@@ -2706,13 +2723,20 @@ export function AdminPage() {
                   <p className="text-sm text-gray-400">Không có báo cáo nào trong trạng thái đang lọc.</p>
                 </div>
               ) : (
-                <div className="grid min-h-0 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-260px)] xl:max-h-[860px]">
-                  <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                    <div className="border-b border-gray-100 p-4">
-                      <p className="text-sm font-black text-gray-900">Tour có báo cáo</p>
-                      <p className="mt-0.5 text-xs text-gray-500">{reportTours.length} tour cần theo dõi</p>
+                <div className="grid min-h-0 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-220px)] xl:max-h-[900px]">
+                  <div className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                    <div className="border-b border-gray-100 p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-base font-black text-gray-900">Tour có báo cáo</p>
+                          <p className="mt-1 text-xs text-gray-500">Ưu tiên các tour còn báo cáo đang xử lý</p>
+                        </div>
+                        <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+                          {reportTours.length} tour
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                       {reportTours.map(item => {
                         const active = item.tourId === selectedReportTourData?.tourId;
                         return (
@@ -2772,7 +2796,7 @@ export function AdminPage() {
 
                   {selectedReportTourData && (
                     <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                      <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                         <div className="border-b border-gray-100 p-5">
                           <div className="flex items-start justify-between gap-5">
                             <div className="flex min-w-0 gap-4">
@@ -2880,7 +2904,7 @@ export function AdminPage() {
                                 )}
                               </div>
 
-                              <div className="rounded-2xl border border-gray-200 p-5">
+                              <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-5">
                                 <p className="mb-4 text-base font-black text-gray-900">Xử lý báo cáo</p>
                                 <div className="space-y-3">
                                   {report.status === 'pending' && (
