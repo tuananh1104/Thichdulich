@@ -2412,8 +2412,8 @@ export function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid min-h-0 grid-cols-1 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-220px)] xl:max-h-[900px]">
-                <div className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+                <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm xl:sticky xl:top-5 xl:self-start">
                   <div className="border-b border-gray-100 p-5">
                     <div className="flex items-center justify-between">
                       <div>
@@ -2439,7 +2439,7 @@ export function AdminPage() {
                     />
                   </div>
 
-                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div className="space-y-3 p-3">
                     {reviewTours.length === 0 ? (
                       <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
                         Chưa có tour nào có đánh giá.
@@ -2466,7 +2466,7 @@ export function AdminPage() {
                           }}
                         >
                           <div className="flex gap-3">
-                            <img src={tour.image} alt={tour.name.vi} className="h-20 w-28 rounded-xl object-cover" />
+                            <img src={tour.image} alt={tour.name.vi} className="h-[72px] w-24 rounded-xl object-cover" />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-bold text-gray-900">{tour.name.vi}</p>
                               <p className="truncate text-xs text-gray-500">{tour.providerName}</p>
@@ -2488,7 +2488,7 @@ export function AdminPage() {
                   </div>
                 </div>
 
-                <div className="min-h-0 space-y-5 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                <div className="space-y-5">
                   {selectedReviewTourData && (
                     <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                       <div className="grid gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -2529,14 +2529,14 @@ export function AdminPage() {
                     </div>
                   )}
                 {filteredReviews.length === 0 ? (
-                  <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
+                  <div className="bg-white rounded-3xl p-16 text-center shadow-sm border border-gray-100">
                     <Star className="w-20 h-20 mx-auto mb-4" style={{ color: '#E5E7EB' }} />
                     <p className="text-gray-500 mb-2 font-semibold text-lg">Chưa có đánh giá</p>
                     <p className="text-sm text-gray-400">Khách hàng chưa để lại đánh giá cho tour này</p>
                   </div>
                 ) : (
                   filteredReviews.map((review) => (
-                    <div key={review.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 lg:p-7">
+                    <div key={review.id} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:p-7">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start gap-3">
@@ -2723,8 +2723,8 @@ export function AdminPage() {
                   <p className="text-sm text-gray-400">Không có báo cáo nào trong trạng thái đang lọc.</p>
                 </div>
               ) : (
-                <div className="grid min-h-0 gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:h-[calc(100vh-220px)] xl:max-h-[900px]">
-                  <div className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+                  <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm xl:sticky xl:top-5 xl:self-start">
                     <div className="border-b border-gray-100 p-5">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -2736,7 +2736,7 @@ export function AdminPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    <div className="space-y-3 p-3">
                       {reportTours.map(item => {
                         const active = item.tourId === selectedReportTourData?.tourId;
                         return (
@@ -2753,9 +2753,9 @@ export function AdminPage() {
                           >
                             <div className="flex gap-3">
                               {item.image ? (
-                                <img src={item.image} alt={item.tourName} className="h-20 w-28 rounded-xl object-cover" />
+                                <img src={item.image} alt={item.tourName} className="h-[72px] w-24 rounded-xl object-cover" />
                               ) : (
-                                <div className="flex h-20 w-28 items-center justify-center rounded-xl bg-gray-100">
+                                <div className="flex h-[72px] w-24 items-center justify-center rounded-xl bg-gray-100">
                                   <Package className="h-6 w-6 text-gray-300" />
                                 </div>
                               )}
@@ -2795,7 +2795,7 @@ export function AdminPage() {
                   </div>
 
                   {selectedReportTourData && (
-                    <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    <div className="space-y-4">
                       <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                         <div className="border-b border-gray-100 p-5">
                           <div className="flex items-start justify-between gap-5">
