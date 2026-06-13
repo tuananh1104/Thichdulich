@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -41,6 +42,9 @@ public class CloudinaryUploadService {
     @Value("${cloudinary.api-secret:}")
     private String apiSecret;
 
+    @Value("${cloudinary.url:}")
+    private String cloudinaryUrl;
+
     @Value("${cloudinary.folder:thichdulich}")
     private String rootFolder;
 
@@ -59,24 +63,24 @@ public class CloudinaryUploadService {
     }
 
     public UploadResponseDTO uploadImage(MultipartFile file, String folder) {
-        validateConfig();
+        CloudinaryCredentials credentials = resolveCredentials();
         validateFile(file);
 
         try {
             long timestamp = Instant.now().getEpochSecond();
             String uploadFolder = normalizeFolder(folder);
-            String signature = sha1("folder=" + uploadFolder + "&timestamp=" + timestamp + apiSecret);
+            String signature = sha1("folder=" + uploadFolder + "&timestamp=" + timestamp + credentials.apiSecret());
             String boundary = "----ThichDulichCloudinary" + UUID.randomUUID();
 
             byte[] body = multipartBody(boundary, file, List.of(
-                    field("api_key", apiKey),
+                    field("api_key", credentials.apiKey()),
                     field("timestamp", String.valueOf(timestamp)),
                     field("folder", uploadFolder),
                     field("signature", signature)
             ));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.cloudinary.com/v1_1/" + cloudName + "/image/upload"))
+                    .uri(URI.create("https://api.cloudinary.com/v1_1/" + credentials.cloudName() + "/image/upload"))
                     .timeout(Duration.ofSeconds(60))
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body))
@@ -84,7 +88,7 @@ public class CloudinaryUploadService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalArgumentException("Cloudinary upload failed: " + response.body());
+                throw new IllegalArgumentException("Cloudinary upload failed: " + readCloudinaryError(response.body()));
             }
 
             JsonNode json = objectMapper.readTree(response.body());
@@ -110,6 +114,30 @@ public class CloudinaryUploadService {
         }
     }
 
+    private CloudinaryCredentials resolveCredentials() {
+        if (!isBlank(cloudName) && !isBlank(apiKey) && !isBlank(apiSecret)) {
+            return new CloudinaryCredentials(cloudName.trim(), apiKey.trim(), apiSecret.trim());
+        }
+
+        if (!isBlank(cloudinaryUrl)) {
+            try {
+                URI uri = URI.create(cloudinaryUrl.trim());
+                String userInfo = uri.getUserInfo();
+                String host = uri.getHost();
+                if ("cloudinary".equalsIgnoreCase(uri.getScheme()) && !isBlank(userInfo) && !isBlank(host)) {
+                    String[] parts = userInfo.split(":", 2);
+                    if (parts.length == 2 && !isBlank(parts[0]) && !isBlank(parts[1])) {
+                        return new CloudinaryCredentials(decode(host), decode(parts[0]), decode(parts[1]));
+                    }
+                }
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalStateException("Cloudinary configuration is invalid. Please check CLOUDINARY_URL.");
+            }
+        }
+
+        throw new IllegalStateException("Cloudinary configuration is missing. Please set CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.");
+    }
+
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File ảnh không hợp lệ");
@@ -129,6 +157,26 @@ public class CloudinaryUploadService {
         if (child.isBlank()) child = "general";
         String root = rootFolder == null || rootFolder.isBlank() ? "thichdulich" : rootFolder.trim();
         return root.replaceAll("/+$", "") + "/" + child.replaceAll("^/+", "");
+    }
+
+    private String readCloudinaryError(String body) {
+        if (body == null || body.isBlank()) {
+            return "Unknown Cloudinary error";
+        }
+        try {
+            String message = objectMapper.readTree(body).path("error").path("message").asText();
+            return message == null || message.isBlank() ? body : message;
+        } catch (Exception ex) {
+            return body;
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String decode(String value) {
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     private byte[] multipartBody(String boundary, MultipartFile file, List<FormField> fields) throws IOException {
@@ -172,5 +220,8 @@ public class CloudinaryUploadService {
     }
 
     private record FormField(String name, String value) {
+    }
+
+    private record CloudinaryCredentials(String cloudName, String apiKey, String apiSecret) {
     }
 }

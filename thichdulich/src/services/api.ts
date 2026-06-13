@@ -152,7 +152,6 @@ class ApiClient {
     formData.append('file', file);
     formData.append('folder', folder);
     const response = await this.client.post('/api/uploads/image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
     });
     return response.data.data;
@@ -164,7 +163,6 @@ class ApiClient {
     files.forEach(file => formData.append('files', file));
     formData.append('folder', folder);
     const response = await this.client.post('/api/uploads/images', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,
     });
     return response.data.data || [];
@@ -596,6 +594,10 @@ function normalizeApiMessage(message?: string) {
   if (API_MESSAGE_MAP[trimmed]) return API_MESSAGE_MAP[trimmed];
 
   const lower = trimmed.toLowerCase();
+  if (lower.includes('cloudinary configuration is missing')) return 'Thieu cau hinh Cloudinary tren server. Kiem tra CLOUDINARY_URL hoac CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET.';
+  if (lower.includes('cloudinary configuration is invalid')) return 'Cau hinh Cloudinary tren server khong hop le. Kiem tra lai CLOUDINARY_URL.';
+  if (lower.includes('cloudinary upload failed')) return trimmed.replace('Cloudinary upload failed:', 'Upload anh len Cloudinary that bai:');
+  if (lower.includes('cannot upload image to cloudinary')) return 'Khong the upload anh len Cloudinary. Kiem tra cau hinh Cloudinary va ket noi server.';
   if (lower.includes('network error')) return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối và thử lại.';
   if (lower.includes('timeout')) return 'Kết nối quá lâu không phản hồi. Vui lòng thử lại.';
   if (lower.includes('request failed with status code 401')) return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
