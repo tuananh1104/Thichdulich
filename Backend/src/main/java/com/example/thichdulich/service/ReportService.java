@@ -3,11 +3,13 @@ package com.example.thichdulich.service;
 import com.example.thichdulich.dto.TourReportDTO;
 import com.example.thichdulich.entity.Booking;
 import com.example.thichdulich.entity.Tour;
+import com.example.thichdulich.entity.TourMessage;
 import com.example.thichdulich.entity.TourReport;
 import com.example.thichdulich.entity.User;
 import com.example.thichdulich.mapper.DtoMapper;
 import com.example.thichdulich.repository.BookingRepository;
 import com.example.thichdulich.repository.ProviderRepository;
+import com.example.thichdulich.repository.TourMessageRepository;
 import com.example.thichdulich.repository.TourReportRepository;
 import com.example.thichdulich.repository.TourRepository;
 import com.example.thichdulich.repository.UserRepository;
@@ -40,6 +42,9 @@ public class ReportService {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private TourMessageRepository messageRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -94,6 +99,7 @@ public class ReportService {
                 "/admin/reports",
                 "{\"reportId\":\"" + saved.getId() + "\",\"tourId\":\"" + tour.getId() + "\"}"
         );
+        sendReportAlertToProviderChat(saved);
         return DtoMapper.toReportDTO(saved);
     }
 
@@ -128,5 +134,76 @@ public class ReportService {
         if (!ownsTour) {
             throw new RuntimeException("You do not have permission to view reports for this tour");
         }
+    }
+
+    private void sendReportAlertToProviderChat(TourReport report) {
+        Tour tour = report.getTour();
+        if (tour == null || tour.getProvider() == null || tour.getProvider().getUser() == null) {
+            return;
+        }
+
+        User adminSender = userRepository.findByRole(User.UserRole.admin)
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (adminSender == null) {
+            return;
+        }
+
+        TourMessage message = new TourMessage();
+        message.setTour(tour);
+        message.setSender(adminSender);
+        message.setSenderRole(TourMessage.SenderRole.admin);
+        message.setSenderName("Admin");
+        message.setMessage(buildReportChatMessage(report));
+
+        TourMessage savedMessage = messageRepository.save(message);
+        notificationService.notifyUser(
+                tour.getProvider().getUser(),
+                "tour_report_alert",
+                "Tour co bao cao moi",
+                tour.getNameVi() + ": " + safeText(report.getReason()),
+                "/provider/feedback",
+                "{\"tourId\":\"" + tour.getId() + "\",\"reportId\":\"" + report.getId() + "\",\"messageId\":\"" + savedMessage.getId() + "\"}"
+        );
+    }
+
+    private String buildReportChatMessage(TourReport report) {
+        StringBuilder message = new StringBuilder();
+        message.append("[CANH BAO BAO CAO TOUR]\n");
+        message.append("Tour: ").append(safeText(report.getTour() != null ? report.getTour().getNameVi() : null)).append('\n');
+        if (report.getBooking() != null) {
+            message.append("Ma dat tour: ").append(report.getBooking().getId()).append('\n');
+        }
+        message.append("Nguoi bao cao: ").append(safeText(report.getReportedBy() != null ? report.getReportedBy().getName() : null)).append('\n');
+        message.append("Ly do: ").append(safeText(report.getReason())).append('\n');
+        message.append("Mo ta: ").append(safeText(report.getDescription())).append('\n');
+
+        String[] images = readReportImages(report.getImages());
+        if (images.length > 0) {
+            message.append("Anh dinh kem:\n");
+            for (int i = 0; i < images.length; i++) {
+                message.append(i + 1).append(". ").append(images[i]).append('\n');
+            }
+        } else {
+            message.append("Anh dinh kem: Khong co\n");
+        }
+        message.append("Vui long kiem tra va phan hoi trong doan chat nay.");
+        return message.toString();
+    }
+
+    private String[] readReportImages(String imagesJson) {
+        if (imagesJson == null || imagesJson.isBlank()) {
+            return new String[0];
+        }
+        try {
+            return objectMapper.readValue(imagesJson, String[].class);
+        } catch (Exception ignored) {
+            return new String[] { imagesJson };
+        }
+    }
+
+    private String safeText(String value) {
+        return value == null || value.isBlank() ? "Khong co" : value.trim();
     }
 }

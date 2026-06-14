@@ -85,6 +85,48 @@ function getAvatarColor(name: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
+function splitMessageImages(message: string): { text: string; images: string[] } {
+  const imageUrls: string[] = [];
+  const textLines = message.split('\n').filter(line => {
+    const match = line.trim().match(/^(?:\d+\.\s*)?(https?:\/\/\S+)$/);
+    if (!match) return true;
+    imageUrls.push(match[1]);
+    return false;
+  });
+  return { text: textLines.join('\n').trim(), images: imageUrls };
+}
+
+function MessageContent({ message, isSelf }: { message: string; isSelf: boolean }) {
+  const { text, images } = splitMessageImages(message);
+
+  return (
+    <div className="space-y-2">
+      {text && <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{text}</p>}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          {images.map((url, index) => (
+            <a
+              key={`${url}-${index}`}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="block overflow-hidden rounded-lg border"
+              style={{ borderColor: isSelf ? 'rgba(255,255,255,0.45)' : '#E2E8F0' }}
+            >
+              <img
+                src={url}
+                alt={`Anh bao cao ${index + 1}`}
+                className="h-24 w-full object-cover"
+                loading="lazy"
+              />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DEFAULT_QUICK_REPLIES = [
   'Đã nhận được thông tin, chúng tôi sẽ xem xét sớm.',
   'Vui lòng cập nhật lại thông tin và gửi để chúng tôi duyệt.',
@@ -533,7 +575,7 @@ export function MessagingSystem({
                                 maxWidth: '100%',
                               }}
                             >
-                              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
+                              <MessageContent message={msg.message} isSelf={isSelf} />
                             </div>
                             {isLast && (
                               <div className={`flex items-center gap-1 mt-1 px-1 ${isSelf ? 'flex-row-reverse' : ''}`}>
