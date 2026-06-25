@@ -20,6 +20,9 @@ import com.example.thichdulich.repository.TourRepository;
 import com.example.thichdulich.repository.UserInteractionRepository;
 import com.example.thichdulich.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -322,12 +325,21 @@ public class TourService {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         List<Booking> bookings = bookingRepository.findByUserOrderByCreatedAtDesc(user);
-        List<UserInteraction> interactions = interactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        
+        // Performance optimization: limit interactions to 50 recent items
+        List<UserInteraction> interactions = interactionRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 50));
         List<Favorite> favorites = favoriteRepository.findByUserId(userId);
-        List<Tour> approvedTours = tourRepository.findByStatus(Tour.TourStatus.approved)
-                .stream()
-                .filter(t -> Boolean.TRUE.equals(t.getAvailability()))
-                .collect(Collectors.toList());
+        
+        // Performance optimization: limit database fetch to top 100 tours by rating
+        List<Tour> approvedTours = tourRepository.findByStatusAndAvailability(Tour.TourStatus.approved, true, PageRequest.of(0, 100, Sort.by("rating").descending()));
+
+        // Collaborative Filtering: find tours recommended by similar users
+        List<String> similarUserIds = bookingRepository.findSimilarUserIdsByBookedTours(userId);
+        List<String> collaborativeTourIds = new ArrayList<>();
+        if (similarUserIds != null && !similarUserIds.isEmpty()) {
+            collaborativeTourIds = bookingRepository.findRecommendedTourIdsFromSimilarUsers(similarUserIds, userId);
+        }
+        final List<String> recommendedTourIds = collaborativeTourIds;
 
         Map<Tour.TourType, Integer> typeWeights = new HashMap<>();
         Map<String, Integer> locationWeights = new HashMap<>();
@@ -380,7 +392,7 @@ public class TourService {
         Double avgDuration = durations.isEmpty()
                 ? null
                 : durations.stream().mapToInt(Integer::intValue).average().orElse(0);
-        boolean hasPersonalSignals = !typeWeights.isEmpty() || !locationWeights.isEmpty() || !searchTokens.isEmpty() || !favoriteTourIds.isEmpty();
+        boolean hasPersonalSignals = !typeWeights.isEmpty() || !locationWeights.isEmpty() || !searchTokens.isEmpty() || !favoriteTourIds.isEmpty() || !recommendedTourIds.isEmpty();
 
         return approvedTours.stream()
                 .filter(tour -> bookings.stream().noneMatch(b -> b.getTour() != null && b.getTour().getId().equals(tour.getId())))
@@ -393,6 +405,7 @@ public class TourService {
                         avgDuration,
                         searchTokens,
                         favoriteTourIds.contains(tour.getId()),
+                        recommendedTourIds.contains(tour.getId()),
                         hasPersonalSignals))
                 .filter(rec -> rec.getScore() > 0)
                 .sorted(Comparator.comparing(TourRecommendationDTO::getScore).reversed())
@@ -409,6 +422,7 @@ public class TourService {
             Double avgDuration,
             Set<String> searchTokens,
             boolean isFavorite,
+            boolean isCollaborative,
             boolean hasPersonalSignals) {
         double score = 0;
         List<String> reasons = new ArrayList<>();
@@ -416,6 +430,11 @@ public class TourService {
         if (isFavorite) {
             score += 80;
             addReason(reasons, "Tour bạn đã lưu yêu thích");
+        }
+
+        if (isCollaborative) {
+            score += 30;
+            addReason(reasons, "Gợi ý dựa trên lựa chọn của những du khách có cùng sở thích với bạn");
         }
 
         int typeWeight = typeWeights.getOrDefault(tour.getType(), 0);

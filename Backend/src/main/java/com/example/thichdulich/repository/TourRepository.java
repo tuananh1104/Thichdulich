@@ -28,6 +28,8 @@ public interface TourRepository extends JpaRepository<Tour, String> {
 
     List<Tour> findByStatusOrderByRatingDesc(Tour.TourStatus status);
 
+    List<Tour> findByStatusAndAvailability(Tour.TourStatus status, Boolean availability, org.springframework.data.domain.Pageable pageable);
+
     @Query("""
             select t from Tour t
             where t.status = com.example.thichdulich.entity.Tour.TourStatus.approved

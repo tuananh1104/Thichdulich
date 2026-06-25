@@ -64,4 +64,26 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
             @Param("excludeBookingId") String excludeBookingId);
 
     Long countByUserAndStatusNot(User user, Booking.BookingStatus status);
+
+    @Query("""
+            select distinct b.user.id
+            from Booking b
+            where b.tour.id in (
+                select b2.tour.id from Booking b2 where b2.user.id = :userId
+            )
+            and b.user.id <> :userId
+            """)
+    List<String> findSimilarUserIdsByBookedTours(@Param("userId") String userId);
+
+    @Query("""
+            select distinct b.tour.id
+            from Booking b
+            where b.user.id in :userIds
+              and b.tour.id not in (
+                  select b2.tour.id from Booking b2 where b2.user.id = :currentUserId
+              )
+            """)
+    List<String> findRecommendedTourIdsFromSimilarUsers(
+            @Param("userIds") List<String> userIds,
+            @Param("currentUserId") String currentUserId);
 }

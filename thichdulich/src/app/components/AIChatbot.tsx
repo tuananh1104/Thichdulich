@@ -272,12 +272,27 @@ export function AIChatbot() {
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
 
+  const handleClearHistory = () => {
+    localStorage.removeItem('aiChatSessionId');
+    sessionIdRef.current = crypto.randomUUID();
+    localStorage.setItem('aiChatSessionId', sessionIdRef.current);
+    const welcomeMessage: Message = {
+      id: Date.now().toString(),
+      type: 'bot',
+      content: language === 'vi'
+        ? 'Xin chào! Tôi là trợ lý AI của Thích Du Lịch. Tôi có thể giúp bạn tìm tour theo địa điểm, ngày đi, số người, ngân sách, hoặc hướng dẫn thanh toán/hủy hoàn tiền.\n\nBạn muốn tìm tour như thế nào?'
+        : 'Hello! I am Thich Du Lich AI assistant. I can help you find tours by destination, date, group size, budget, or explain payment/cancellation policies.\n\nWhat kind of tour are you looking for?',
+      timestamp: new Date(),
+    };
+    setMessages([welcomeMessage]);
+  };
+
   return (
     <>
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-300 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
+        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-2xl shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
         style={isOpen
           ? { background: 'linear-gradient(135deg, #EF4444, #DC2626)', transform: 'rotate(90deg)', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }
           : { background: 'linear-gradient(135deg, #0064D2, #0091FF)', boxShadow: '0 8px 28px rgba(0,100,210,0.45)' }
@@ -289,7 +304,7 @@ export function AIChatbot() {
         ) : (
           <div className="relative">
             <MessageCircle className="w-6 h-6 text-white" />
-            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />
           </div>
         )}
       </button>
@@ -297,13 +312,15 @@ export function AIChatbot() {
       {/* Chat Window */}
       {isOpen && (
         <div
-          className="fixed inset-x-3 bottom-20 z-50 flex flex-col overflow-hidden shadow-2xl animate-slide-up sm:left-auto sm:right-6 sm:bottom-24 sm:w-[380px]"
+          className="fixed inset-x-3 bottom-20 z-50 flex flex-col overflow-hidden shadow-2xl animate-slide-up sm:left-auto sm:right-6 sm:bottom-24 sm:w-[390px]"
           style={{
-            height: 'min(580px, calc(100dvh - 104px))',
-            borderRadius: 20,
-            background: 'white',
-            border: '1px solid rgba(0,0,0,0.08)',
-            boxShadow: '0 24px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,100,210,0.08)',
+            height: 'min(620px, calc(100dvh - 104px))',
+            borderRadius: 24,
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            boxShadow: '0 30px 70px rgba(0,100,210,0.12), 0 0 0 1px rgba(0,100,210,0.05)',
           }}
         >
           {/* Header */}
@@ -315,7 +332,7 @@ export function AIChatbot() {
               className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
             >
-              <Bot className="w-5 h-5 text-blue-300" />
+              <Bot className="w-5 h-5 text-blue-300 animate-pulse" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-1.5">
@@ -324,147 +341,46 @@ export function AIChatbot() {
                 </h3>
                 <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
               </div>
-              <p className="text-xs" style={{ color: 'rgba(180,210,255,0.65)' }}>
+              <p className="text-[11px]" style={{ color: 'rgba(180,210,255,0.65)' }}>
                 {language === 'vi' ? 'Sẵn sàng hỗ trợ 24/7' : 'Available 24/7'}
               </p>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <X className="w-4 h-4 text-white/60" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleClearHistory}
+                title={language === 'vi' ? 'Xóa lịch sử chat' : 'Clear history'}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/60 hover:text-white"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4 text-white/60 hover:text-white" />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ background: '#F8FAFF' }}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: 'rgba(248, 250, 255, 0.5)' }}>
             {messages.map((message) => (
-              <div
+              <ChatMessageBubble
                 key={message.id}
-                className={`flex gap-2.5 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {message.type === 'bot' && (
-                  <div
-                    className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)' }}
-                  >
-                    <Bot className="w-4 h-4 text-white" />
-                  </div>
-                )}
-                <div
-                  className={`${message.tours && message.tours.length > 0 ? 'max-w-[86%]' : 'max-w-[78%]'} px-3.5 py-2.5 rounded-2xl`}
-                  style={message.type === 'user'
-                    ? {
-                        background: 'linear-gradient(135deg, #0064D2, #0091FF)',
-                        color: 'white',
-                        borderBottomRightRadius: 4,
-                      }
-                    : {
-                        background: 'white',
-                        color: '#1F2937',
-                        border: '1px solid #E5E7EB',
-                        borderBottomLeftRadius: 4,
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                      }
-                  }
-                >
-                  <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
-                  {message.type === 'bot' && message.tours && message.tours.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {message.tours.map((tour) => (
-                        <button
-                          key={tour.id}
-                          onClick={() => {
-                            setIsOpen(false);
-                            navigate(tour.url || `/tours/${tour.id}`);
-                          }}
-                          className="group w-full overflow-hidden rounded-xl border bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
-                          style={{ borderColor: '#E2E8F0' }}
-                        >
-                          <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
-                            {tour.image ? (
-                              <img
-                                src={tour.image}
-                                alt={tour.name}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 text-slate-400">
-                                <ImageIcon className="h-7 w-7" />
-                              </div>
-                            )}
-                            {tour.type && (
-                              <span className="absolute left-2 top-2 max-w-[calc(100%-16px)] truncate rounded-md bg-white/95 px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm">
-                                {formatTourType(tour.type)}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="p-3">
-                            <p className="line-clamp-2 min-h-[40px] text-sm font-bold leading-5 text-slate-950">
-                              {tour.name}
-                            </p>
-
-                            <div className="mt-2 space-y-1.5 text-xs text-slate-600">
-                              <div className="flex min-w-0 items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" />
-                                <span className="truncate">{tour.location}</span>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="inline-flex min-w-0 items-center gap-1.5">
-                                  <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                                  <span className="truncate">
-                                    {tour.duration ? `${tour.duration} ${language === 'vi' ? 'ngày' : 'days'}` : (language === 'vi' ? 'Lịch linh hoạt' : 'Flexible schedule')}
-                                  </span>
-                                </span>
-                                <span className="inline-flex shrink-0 items-center gap-1">
-                                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                                  {formatRating(tour.rating, tour.reviewCount)}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 flex items-end justify-between gap-2 border-t border-slate-100 pt-2.5">
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-semibold uppercase text-slate-400">
-                                  {language === 'vi' ? 'Từ' : 'From'}
-                                </p>
-                                <p className="truncate text-sm font-black text-blue-700">
-                                  {formatPrice(tour.price)}
-                                </p>
-                              </div>
-                              <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-                                {language === 'vi' ? 'Xem' : 'View'}
-                                <ArrowUpRight className="h-3 w-3" />
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: message.type === 'user' ? 'rgba(255,255,255,0.6)' : '#CBD5E1' }}
-                  >
-                    {message.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-                {message.type === 'user' && (
-                  <div
-                    className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'linear-gradient(135deg, #FF6000, #FF8C00)' }}
-                  >
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                )}
-              </div>
+                message={message}
+                language={language}
+                onNavigateTour={(url) => {
+                  setIsOpen(false);
+                  navigate(url);
+                }}
+                formatTourType={formatTourType}
+                formatPrice={formatPrice}
+                formatRating={formatRating}
+              />
             ))}
 
             {isTyping && (
-              <div className="flex gap-2.5 justify-start">
+              <div className="flex gap-2.5 justify-start animate-pulse">
                 <div
                   className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)' }}
@@ -473,14 +389,14 @@ export function AIChatbot() {
                 </div>
                 <div
                   className="px-4 py-3 rounded-2xl"
-                  style={{ background: 'white', border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', borderBottomLeftRadius: 4 }}
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', borderBottomLeftRadius: 4 }}
                 >
                   <div className="flex gap-1.5 items-center">
                     {[0, 150, 300].map(delay => (
                       <div
                         key={delay}
-                        className="w-2 h-2 rounded-full animate-bounce"
-                        style={{ background: '#CBD5E1', animationDelay: `${delay}ms` }}
+                        className="w-1.5 h-1.5 rounded-full animate-bounce"
+                        style={{ background: '#0064D2', animationDelay: `${delay}ms` }}
                       />
                     ))}
                   </div>
@@ -490,46 +406,23 @@ export function AIChatbot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Questions */}
-          {messages.length <= 1 && (
-            <div className="flex-shrink-0 px-4 py-3" style={{ borderTop: '1px solid #E5E7EB', background: '#F8FAFC' }}>
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: '#475569' }}>
-                  {language === 'vi' ? 'Bạn có thể hỏi' : 'Try asking'}
-                </p>
-                <span className="flex h-5 w-5 items-center justify-center rounded-md" style={{ background: '#0F172A' }}>
-                  <Sparkles className="h-2.5 w-2.5 text-amber-300" />
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {quickQuestions.map((question, index) => {
-                  const Icon = question.icon;
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleSendMessage(question.prompt)}
-                      className="group flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-left shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-md active:scale-[0.99]"
-                      style={{
-                        background: question.bg,
-                        color: '#0F172A',
-                      }}
-                    >
-                      <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-700"
-                        style={{ background: question.accent }}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="min-w-0 flex-1 text-[11px] font-black leading-tight text-slate-800">
-                        {question.label}
-                      </span>
-                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Quick Questions Horizontal Scrollable Chips */}
+          <div className="flex-shrink-0 px-3 py-2 bg-white border-t border-slate-100 overflow-x-auto flex gap-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {quickQuestions.map((question, index) => {
+              const Icon = question.icon;
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleSendMessage(question.prompt)}
+                  className="flex items-center gap-1.5 shrink-0 rounded-full border border-slate-200 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 transition-all text-xs font-bold text-slate-700 hover:text-blue-700 active:scale-[0.98]"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{question.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Input */}
           <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid #F3F4F6', background: 'white' }}>
             <div className="flex gap-2 items-center">
@@ -561,5 +454,222 @@ export function AIChatbot() {
         </div>
       )}
     </>
+  );
+}
+
+// Sub-component for typewriter text effect
+interface TypewriterTextProps {
+  text: string;
+  onComplete?: () => void;
+  speed?: number;
+}
+
+export function TypewriterText({ text, onComplete, speed = 6 }: TypewriterTextProps) {
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    setDisplayedText('');
+    if (!text) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText((prev) => prev + text.charAt(i));
+      i++;
+      if (i >= text.length) {
+        clearInterval(interval);
+        onComplete?.();
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return <span className="whitespace-pre-line leading-relaxed">{displayedText}</span>;
+}
+
+// Sub-component for chat bubble
+interface ChatMessageBubbleProps {
+  message: Message;
+  language: string;
+  onNavigateTour: (url: string) => void;
+  formatTourType: (type?: string) => string;
+  formatPrice: (value?: number) => string;
+  formatRating: (rating?: number, reviewCount?: number) => string;
+}
+
+export function ChatMessageBubble({
+  message,
+  language,
+  onNavigateTour,
+  formatTourType,
+  formatPrice,
+  formatRating
+}: ChatMessageBubbleProps) {
+  const [isTypingDone, setIsTypingDone] = useState(message.type === 'user');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderMarkdown = (txt: string) => {
+    const lines = txt.split('\n');
+    return lines.map((line, idx) => {
+      let content = line;
+      // parse bold **text** -> <strong>text</strong>
+      content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+      if (line.trim().startsWith('- ')) {
+        const itemText = content.trim().substring(2);
+        return (
+          <li key={idx} className="ml-4 list-disc text-xs leading-relaxed text-slate-800" dangerouslySetInnerHTML={{ __html: itemText }} />
+        );
+      }
+      return (
+        <p key={idx} className="text-xs leading-relaxed mb-1" dangerouslySetInnerHTML={{ __html: content }} />
+      );
+    });
+  };
+
+  return (
+    <div className={`flex gap-2.5 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+      {message.type === 'bot' && (
+        <div
+          className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm"
+          style={{ background: 'linear-gradient(135deg, #0064D2, #0091FF)' }}
+        >
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+      )}
+      <div
+        className={`${message.tours && message.tours.length > 0 ? 'max-w-[90%]' : 'max-w-[78%]'} px-3.5 py-2.5 rounded-2xl relative group`}
+        style={message.type === 'user'
+          ? {
+              background: 'linear-gradient(135deg, #0064D2, #0091FF)',
+              color: 'white',
+              borderBottomRightRadius: 4,
+            }
+          : {
+              background: 'white',
+              color: '#1F2937',
+              border: '1px solid rgba(0,0,0,0.06)',
+              borderBottomLeftRadius: 4,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+            }
+        }
+      >
+        {/* Copy Button */}
+        {message.type === 'bot' && (
+          <button
+            onClick={handleCopy}
+            title={language === 'vi' ? 'Sao chép tin nhắn' : 'Copy message'}
+            className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 focus:outline-none"
+          >
+            {copied ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-600"><polyline points="20 6 9 17 4 12"/></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            )}
+          </button>
+        )}
+
+        {message.type === 'bot' && !isTypingDone ? (
+          <TypewriterText
+            text={message.content}
+            speed={6}
+            onComplete={() => setIsTypingDone(true)}
+          />
+        ) : (
+          <div>{renderMarkdown(message.content)}</div>
+        )}
+
+        {/* Tour Cards (Rendered as horizontal slider if typing completed) */}
+        {isTypingDone && message.type === 'bot' && message.tours && message.tours.length > 0 && (
+          <div className="mt-3 flex overflow-x-auto gap-3 pb-2 pt-1 scrollbar-thin scrollbar-thumb-slate-200" style={{ maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+            {message.tours.map((tour) => (
+              <button
+                key={tour.id}
+                onClick={() => onNavigateTour(tour.url || `/tours/${tour.id}`)}
+                className="group w-[200px] shrink-0 overflow-hidden rounded-xl border bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus:outline-none"
+                style={{ borderColor: '#E2E8F0' }}
+              >
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
+                  {tour.image ? (
+                    <img
+                      src={tour.image}
+                      alt={tour.name}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 text-slate-400">
+                      <ImageIcon className="h-6 w-6" />
+                    </div>
+                  )}
+                  {tour.type && (
+                    <span className="absolute left-1.5 top-1.5 max-w-[calc(100%-12px)] truncate rounded bg-white/95 px-1.5 py-0.5 text-[8px] font-bold text-slate-700 shadow-sm">
+                      {formatTourType(tour.type)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-2.5">
+                  <p className="line-clamp-2 min-h-[32px] text-[11px] font-bold leading-4 text-slate-950">
+                    {tour.name}
+                  </p>
+
+                  <div className="mt-1.5 space-y-1 text-[9px] text-slate-600">
+                    <div className="flex min-w-0 items-center gap-1">
+                      <MapPin className="h-3 w-3 shrink-0 text-blue-500" />
+                      <span className="truncate">{tour.location}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <Clock className="h-3 w-3 shrink-0 text-slate-400" />
+                        <span className="truncate">
+                          {tour.duration ? `${tour.duration} ${language === 'vi' ? 'ngày' : 'days'}` : (language === 'vi' ? 'Lịch linh hoạt' : 'Flexible')}
+                        </span>
+                      </span>
+                      <span className="inline-flex shrink-0 items-center gap-0.5">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        {formatRating(tour.rating, tour.reviewCount)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex items-end justify-between gap-1 border-t border-slate-100 pt-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-black text-blue-700">
+                        {formatPrice(tour.price)}
+                      </p>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                      {language === 'vi' ? 'Xem' : 'View'}
+                      <ArrowUpRight className="h-2.5 w-2.5" />
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        <p
+          className="text-[10px] mt-1"
+          style={{ color: message.type === 'user' ? 'rgba(255,255,255,0.6)' : '#94A3B8' }}
+        >
+          {message.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      </div>
+      {message.type === 'user' && (
+        <div
+          className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm"
+          style={{ background: 'linear-gradient(135deg, #FF6000, #FF8C00)' }}
+        >
+          <User className="w-4 h-4 text-white" />
+        </div>
+      )}
+    </div>
   );
 }

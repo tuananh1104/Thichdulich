@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface UserInteractionRepository extends JpaRepository<UserInteraction, String> {
     List<UserInteraction> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<UserInteraction> findByUserIdOrderByCreatedAtDesc(String userId, org.springframework.data.domain.Pageable pageable);
 }
