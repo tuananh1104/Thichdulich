@@ -48,7 +48,9 @@ public class ChatAiService {
             if (response.statusCode() < 200 || response.statusCode() >= 300) return fallback(intent, data);
             String text = extractReply(response.body());
             return StringUtils.hasText(text) ? text : fallback(intent, data);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            System.err.println("Error calling Gemini API: " + e.getMessage());
+            e.printStackTrace();
             return fallback(intent, data);
         }
     }

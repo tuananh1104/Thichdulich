@@ -1,0 +1,15 @@
+export const INTENTS = Object.freeze({
+  TOUR_SEARCH: 'tour_search',
+  TOUR_DETAIL: 'tour_detail',
+  TOUR_FOLLOW_UP: 'tour_follow_up',
+  TOUR_REVIEW: 'tour_review',
+  TOUR_COMPARE: 'tour_compare',
+  TOUR_SCHEDULE: 'tour_schedule',
+  PRICE_CALCULATION: 'price_calculation',
+  PAYMENT_POLICY: 'payment_policy',
+  CANCELLATION_POLICY: 'cancellation_policy',
+  BOOKING_STATUS: 'booking_status',
+  TRAVEL_ADVICE: 'travel_advice',
+  WEBSITE_HELP: 'website_help',
+  OUT_OF_SCOPE: 'out_of_scope',
+});

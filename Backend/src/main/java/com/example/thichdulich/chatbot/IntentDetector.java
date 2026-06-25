@@ -28,9 +28,14 @@ public class IntentDetector {
         if (containsAny(q, "chi tiet", "co an", "bao gom", "lich trinh", "khach san", "tour nay co gi")) return ChatIntent.tour_detail;
         if (FOLLOW_UP_TERMS.stream().anyMatch(q::contains)) return ChatIntent.tour_follow_up;
         if (containsAny(q, "loi", "website", "quen ma don", "dang nhap", "dang ky", "otp", "mat khau", "ho tro")) return ChatIntent.website_help;
-        if (containsAny(q, "nen mang gi", "thang", "mua nao", "kinh nghiem", "di bien", "sapa", "du lich chung")) return ChatIntent.travel_advice;
-        if (containsAny(q, "tour", "toi muon di", "ninh binh", "ha long", "sapa", "gia dinh", "re nhat", "tim")) return ChatIntent.tour_search;
+        if (containsAny(q, "nen mang gi", "thang may", "mua nao", "kinh nghiem", "thoi tiet", "nhiet do", "mac gi", "mac do gi", "chuan bi gi", "di bien")) return ChatIntent.travel_advice;
+        if (containsAny(q, "tour", "chuyen di", "ve du lich", "kham pha", "nghi duong", "toi muon di", "re nhat", "gia dinh", "tim", "goi y", "ninh binh", "ha long", "sapa", "hue", "da nang", "nha trang", "phu quoc", "da lat")) return ChatIntent.tour_search;
         return ChatIntent.travel_advice;
+    }
+
+    public boolean isGreetingOrChitchat(String message) {
+        String q = normalize(message);
+        return containsAny(q, "xin chao", "chao ban", "hello", "hi", "chao bot", "tam biet", "cam on", "thank", "ban la ai", "ai day", "ten la gi", "what is your name", "who are you");
     }
 
     public boolean isAmbiguousReference(String message) {

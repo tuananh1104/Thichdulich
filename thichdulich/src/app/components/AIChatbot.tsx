@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { MessageCircle, X, Send, Bot, User, Sparkles, MapPin, Clock, Star, Wallet, Users, CalendarDays, CreditCard, ArrowUpRight, ImageIcon } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Sparkles, MapPin, Clock, Star, Wallet, Users, CalendarDays, CreditCard, ArrowUpRight, ImageIcon, Palmtree } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import api, { getApiErrorMessage } from '../../services/api';
 import { useTourManagement } from '../contexts/TourManagementContext';
@@ -198,12 +198,12 @@ export function AIChatbot() {
   };
 
   const quickQuestions = language === 'vi' ? [
-    { label: 'Tìm theo ngân sách', prompt: 'Tôi muốn tìm tour theo ngân sách', icon: Wallet, bg: '#FFFFFF', accent: '#FFF7ED' },
+    { label: 'Tour biển hot', prompt: 'Gợi ý tour biển hot', icon: Palmtree, bg: '#FFFFFF', accent: '#E0F2FE' },
     { label: 'Tour cho gia đình', prompt: 'Gợi ý tour phù hợp cho gia đình', icon: Users, bg: '#FFFFFF', accent: '#ECFDF5' },
     { label: 'Tour 2-3 ngày', prompt: 'Tìm tour thời lượng 2 đến 3 ngày', icon: CalendarDays, bg: '#FFFFFF', accent: '#EFF6FF' },
     { label: 'Thanh toán & hoàn tiền', prompt: 'Hướng dẫn thanh toán, hủy tour và hoàn tiền', icon: CreditCard, bg: '#FFFFFF', accent: '#FDF2F8' },
   ] : [
-    { label: 'Find by budget', prompt: 'I want to find tours by budget', icon: Wallet, bg: '#FFFFFF', accent: '#FFF7ED' },
+    { label: 'Hot beach tours', prompt: 'Recommend hot beach tours', icon: Palmtree, bg: '#FFFFFF', accent: '#E0F2FE' },
     { label: 'Family tours', prompt: 'Recommend family-friendly tours', icon: Users, bg: '#FFFFFF', accent: '#ECFDF5' },
     { label: '2-3 day tours', prompt: 'Find tours lasting 2 to 3 days', icon: CalendarDays, bg: '#FFFFFF', accent: '#EFF6FF' },
     { label: 'Payment & refund', prompt: 'Explain payment, cancellation and refund policy', icon: CreditCard, bg: '#FFFFFF', accent: '#FDF2F8' },

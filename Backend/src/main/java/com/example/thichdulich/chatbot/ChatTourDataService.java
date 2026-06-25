@@ -46,12 +46,7 @@ public class ChatTourDataService {
             return matchedTours;
         }
 
-        return tours.stream()
-                .sorted(Comparator
-                        .comparing(Tour::getRating, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(Tour::getReviewCount, Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(6)
-                .toList();
+        return List.of();
     }
 
     public Optional<Tour> getTourDetail(String tourId) {

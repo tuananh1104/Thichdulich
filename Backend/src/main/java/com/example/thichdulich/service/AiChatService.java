@@ -121,7 +121,13 @@ public class AiChatService {
                     data.setPaymentData(paymentDataService.getPaymentStatus(resolved.getOrderCode(), currentUserId));
                 }
             }
-            case travel_advice -> data.setTourData("Đây là câu hỏi tư vấn du lịch chung. AI được phép dùng kiến thức du lịch phổ thông, không bịa dữ liệu tour cụ thể.");
+            case travel_advice -> {
+                if (intentDetector.isGreetingOrChitchat(message)) {
+                    data.setTourData("Đây là câu chào hỏi, cảm ơn hoặc tán gẫu thông thường. AI hãy trả lời thân thiện, lịch sự, đóng vai trợ lý AI Thích Du Lịch, sẵn sàng hỗ trợ tìm tour hoặc giải đáp thắc mắc.");
+                } else {
+                    data.setTourData("Đây là câu hỏi tư vấn du lịch chung. AI được phép dùng kiến thức du lịch phổ thông, không bịa dữ liệu tour cụ thể.");
+                }
+            }
             case website_help -> data.setWebsiteHelpData(websiteHelpService.getWebsiteHelp(message));
             case out_of_scope -> data.setWebsiteHelpData("Câu hỏi nằm ngoài phạm vi website đặt tour du lịch.");
         }
