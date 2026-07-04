@@ -406,22 +406,35 @@ export function AIChatbot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Questions Horizontal Scrollable Chips */}
-          <div className="flex-shrink-0 px-3 py-2 bg-white border-t border-slate-100 overflow-x-auto flex gap-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {quickQuestions.map((question, index) => {
-              const Icon = question.icon;
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleSendMessage(question.prompt)}
-                  className="flex items-center gap-1.5 shrink-0 rounded-full border border-slate-200 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 transition-all text-xs font-bold text-slate-700 hover:text-blue-700 active:scale-[0.98]"
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{question.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Quick Questions Grid Layout */}
+          {!messages.some((m) => m.type === 'user') && (
+            <div className="flex-shrink-0 px-3.5 py-3 bg-white border-t border-slate-100 grid grid-cols-2 gap-2">
+              {quickQuestions.map((question, index) => {
+                const Icon = question.icon;
+                const iconColors = [
+                  'text-sky-600',
+                  'text-emerald-600',
+                  'text-blue-600',
+                  'text-pink-600'
+                ];
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleSendMessage(question.prompt)}
+                    className="flex items-center gap-2.5 rounded-xl border border-slate-100 p-2.5 bg-slate-50/50 hover:bg-blue-50/40 hover:border-blue-200/80 transition-all text-[11px] font-bold text-slate-700 hover:text-blue-700 active:scale-[0.98] text-left cursor-pointer group shadow-sm"
+                  >
+                    <div
+                      className="p-1.5 rounded-lg flex items-center justify-center shrink-0 transition-colors group-hover:bg-white"
+                      style={{ backgroundColor: question.accent }}
+                    >
+                      <Icon className={`h-4 w-4 ${iconColors[index % iconColors.length]}`} />
+                    </div>
+                    <span className="line-clamp-2 leading-snug">{question.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Input */}
           <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid #F3F4F6', background: 'white' }}>
