@@ -191,6 +191,11 @@ class ApiClient {
     return response.data.data;
   }
 
+  async getInteractions() {
+    const response = await this.client.get('/api/users/interactions');
+    return response.data.data;
+  }
+
   async getFavorites() {
     const response = await this.client.get('/api/users/favorites');
     return response.data.data;

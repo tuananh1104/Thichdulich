@@ -12,6 +12,10 @@ import java.util.List;
 
 @Repository
 public interface TourRepository extends JpaRepository<Tour, String> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from Tour t where t.id = :id")
+    java.util.Optional<Tour> findByIdWithLock(@Param("id") String id);
+
     List<Tour> findByProvider(Provider provider);
 
     List<Tour> findByProviderId(String providerId);

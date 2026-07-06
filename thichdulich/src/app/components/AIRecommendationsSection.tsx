@@ -19,11 +19,13 @@ export function AIRecommendationsSection() {
   const { bookings } = useBookings();
   const { favoriteIds } = useFavorites();
   const [recommendations, setRecommendations] = useState<RecommendationResult[]>([]);
+  const [interactions, setInteractions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       setRecommendations([]);
+      setInteractions([]);
       setLoading(false);
       return;
     }
@@ -47,18 +49,25 @@ export function AIRecommendationsSection() {
         ));
       })
       .finally(() => setLoading(false));
+
+    api.getInteractions()
+      .then(data => {
+        setInteractions(data || []);
+      })
+      .catch(() => {
+        setInteractions(AIRecommendationService.getUserInteractions(user.id));
+      });
   }, [user?.id, tours, bookings, favoriteIds]);
 
   const insight = useMemo(() => {
     if (!user) return { viewed: 0, searches: 0, favorites: 0, bookings: 0 };
-    const interactions = AIRecommendationService.getUserInteractions(user.id);
     return {
       viewed: interactions.filter(item => item.action === 'view' || item.action === 'click').length,
       searches: interactions.filter(item => item.action === 'search').length,
       favorites: favoriteIds.size,
       bookings: bookings.filter(item => item.userId === user.id).length,
     };
-  }, [user?.id, bookings, favoriteIds]);
+  }, [user?.id, bookings, favoriteIds, interactions]);
 
   if (!user) return null;
 

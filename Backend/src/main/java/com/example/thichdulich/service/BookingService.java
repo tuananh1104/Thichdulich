@@ -64,7 +64,7 @@ public class BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-        Tour tour = tourRepository.findById(bookingDTO.getTourId())
+        Tour tour = tourRepository.findByIdWithLock(bookingDTO.getTourId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tour"));
 
         LocalDate startDate = bookingDTO.getStartDate();
